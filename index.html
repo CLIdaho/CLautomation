@@ -1,0 +1,4625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ORBIT by RapperStore</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Essentia.js for advanced audio analysis -->
+    <script src="https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia-wasm.web.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/essentia.js@0.1.3/dist/essentia.js-core.js"></script>
+    
+    <!-- Meyda for real-time audio features -->
+    <script src="https://cdn.jsdelivr.net/npm/meyda@5.6.2/dist/web/meyda.min.js"></script>
+    
+    <!-- jsPDF for exports -->
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    
+    <!-- SHA-256 for proof hashing -->
+    <script src="https://cdn.jsdelivr.net/npm/js-sha256@0.9.0/src/sha256.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0a0a0b;
+            --bg-secondary: #111113;
+            --bg-card: #16161a;
+            --bg-card-hover: #1c1c21;
+            --border-color: #2a2a32;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a8;
+            --text-muted: #5a5a65;
+            --accent-pink: #e84d8a;
+            --accent-purple: #a855f7;
+            --accent-blue: #3b82f6;
+            --accent-green: #22c55e;
+            --accent-orange: #f97316;
+            --accent-cyan: #06b6d4;
+            --gradient-primary: linear-gradient(135deg, #e84d8a 0%, #a855f7 100%);
+            --gradient-glow: linear-gradient(135deg, rgba(232, 77, 138, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(168, 85, 247, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(232, 77, 138, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Navigation */
+        .nav-container {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            background: rgba(22, 22, 26, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 12px 24px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .nav-logo {
+            width: 32px;
+            height: 32px;
+            background: var(--gradient-primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            background: transparent;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .nav-link.active {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Main Container */
+        .main-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Page Header */
+        .page-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .page-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(168, 85, 247, 0.1);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-purple);
+            margin-bottom: 20px;
+        }
+
+        .page-badge::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--accent-purple);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+        }
+
+        .page-title {
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            font-size: 16px;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        /* Sections */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .card-icon.pink { background: rgba(232, 77, 138, 0.15); }
+        .card-icon.purple { background: rgba(168, 85, 247, 0.15); }
+        .card-icon.blue { background: rgba(59, 130, 246, 0.15); }
+        .card-icon.green { background: rgba(34, 197, 94, 0.15); }
+        .card-icon.orange { background: rgba(249, 115, 22, 0.15); }
+        .card-icon.cyan { background: rgba(6, 182, 212, 0.15); }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .card-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 16px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--accent-purple);
+            background: rgba(168, 85, 247, 0.05);
+        }
+
+        .upload-zone-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: var(--gradient-glow);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .upload-zone-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .upload-zone-subtitle {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .upload-formats {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .format-tag {
+            padding: 4px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .progress-container.active {
+            display: block;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-secondary);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 100px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        /* DNA Results */
+        .dna-results {
+            display: none;
+        }
+
+        .dna-results.active {
+            display: block;
+        }
+
+        .dna-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .dna-stat {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .dna-stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+        }
+
+        .dna-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Mood Visualization */
+        .mood-container {
+            margin: 24px 0;
+        }
+
+        .mood-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .mood-label {
+            width: 100px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .mood-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .mood-fill {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 0.5s ease;
+        }
+
+        .mood-fill.energy { background: linear-gradient(90deg, #f97316, #ef4444); }
+        .mood-fill.happiness { background: linear-gradient(90deg, #22c55e, #84cc16); }
+        .mood-fill.danceability { background: linear-gradient(90deg, #a855f7, #ec4899); }
+        .mood-fill.aggression { background: linear-gradient(90deg, #ef4444, #dc2626); }
+        .mood-fill.darkness { background: linear-gradient(90deg, #6366f1, #4f46e5); }
+
+        .mood-value {
+            width: 45px;
+            text-align: right;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        /* Waveform */
+        .waveform-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 24px 0;
+        }
+
+        #waveformCanvas {
+            width: 100%;
+            height: 120px;
+            border-radius: 8px;
+        }
+
+        /* Energy Timeline */
+        .energy-timeline {
+            margin: 24px 0;
+        }
+
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .timeline-title {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #energyCanvas {
+            width: 100%;
+            height: 80px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        /* Track Info Display */
+        .track-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .track-artwork {
+            width: 64px;
+            height: 64px;
+            background: var(--gradient-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .track-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .track-name {
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 4px;
+        }
+
+        .track-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .track-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(232, 77, 138, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-purple);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            padding: 8px 12px;
+        }
+
+        .btn-ghost:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Hidden file input */
+        #audioFileInput {
+            display: none;
+        }
+
+        /* Scene Suggestions */
+        .scene-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .scene-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .scene-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-2px);
+        }
+
+        .scene-type {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(6, 182, 212, 0.1);
+            color: var(--accent-cyan);
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .scene-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .scene-description {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .scene-timestamp {
+            margin-top: 12px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Proof Certificate */
+        .certificate-preview {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid var(--accent-purple);
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin: 24px 0;
+        }
+
+        .certificate-badge {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .certificate-title {
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .certificate-hash {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: var(--accent-cyan);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            border-radius: 8px;
+            word-break: break-all;
+            margin: 16px 0;
+        }
+
+        .certificate-timestamp {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* Tab Navigation for Results */
+        .results-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .results-tab {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .results-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .results-tab.active {
+            background: var(--gradient-primary);
+            color: white;
+        }
+
+        .results-panel {
+            display: none;
+        }
+
+        .results-panel.active {
+            display: block;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 10px 16px;
+                gap: 16px;
+            }
+
+            .nav-link {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .main-container {
+                padding: 24px 16px;
+            }
+
+            .upload-zone {
+                padding: 40px 20px;
+            }
+
+            .dna-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .track-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .track-actions {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Loading spinner */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Export dropdown */
+        .export-dropdown {
+            position: relative;
+        }
+
+        .export-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 8px;
+            min-width: 180px;
+            display: none;
+            z-index: 50;
+        }
+
+        .export-menu.active {
+            display: block;
+        }
+
+        .export-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .export-option:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-container">
+        <div class="nav">
+            <div class="nav-brand">
+                <div class="nav-logo">RS</div>
+                <span><strong>ORBIT</strong> <span style="color: var(--text-secondary); font-weight: 400;">by RapperStore</span></span>
+            </div>
+            <div class="nav-links">
+                <button class="nav-link active" data-section="analyze">Analyze</button>
+                <button class="nav-link" data-section="library">Library</button>
+                <button class="nav-link" data-section="tools">Tools</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-container">
+        
+        <!-- ANALYZE SECTION -->
+        <section id="analyzeSection" class="section active">
+            <div class="page-header">
+                <div class="page-badge">Audio Intelligence</div>
+                <h1 class="page-title">Your Music's<br>Living DNA</h1>
+                <p class="page-subtitle">Drop a track and watch ORBIT decode its complete genetic blueprint - mood, energy, sync potential, and more.</p>
+            </div>
+
+            <!-- Upload Card -->
+            <div class="card" id="uploadCard">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-zone-icon">🎵</div>
+                    <div class="upload-zone-title">Drop your track here</div>
+                    <div class="upload-zone-subtitle">or click to browse your files</div>
+                    <div class="upload-formats">
+                        <span class="format-tag">MP3</span>
+                        <span class="format-tag">WAV</span>
+                        <span class="format-tag">FLAC</span>
+                        <span class="format-tag">OGG</span>
+                        <span class="format-tag">M4A</span>
+                    </div>
+                </div>
+                <input type="file" id="audioFileInput" accept="audio/*">
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-label">
+                        <span id="progressText">Analyzing audio...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DNA Results -->
+            <div class="dna-results" id="dnaResults">
+                
+                <!-- Track Info -->
+                <div class="track-info" id="trackInfo">
+                    <div class="track-artwork">🎧</div>
+                    <div class="track-details">
+                        <div class="track-name" id="trackName">Track Name</div>
+                        <div class="track-meta" id="trackMeta">Duration • File Size</div>
+                    </div>
+                    <div class="track-actions">
+                        <button class="btn btn-ghost" id="playPauseBtn">▶️ Play</button>
+                        <button class="btn btn-ghost" id="newTrackBtn">🔄 New Track</button>
+                    </div>
+                </div>
+
+                <!-- Results Tabs -->
+                <div class="results-tabs">
+                    <button class="results-tab active" data-panel="dna">🧬 DNA</button>
+                    <button class="results-tab" data-panel="scenes">🎬 Scenes</button>
+                    <button class="results-tab" data-panel="proof">🛡️ Proof</button>
+                    <button class="results-tab" data-panel="export">📤 Export</button>
+                </div>
+
+                <!-- DNA Panel -->
+                <div class="results-panel active" id="dnaPanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon purple">🧬</div>
+                            <div>
+                                <div class="card-title">Audio DNA Analysis</div>
+                                <div class="card-description">Core musical characteristics extracted from your track</div>
+                            </div>
+                        </div>
+
+                        <div class="dna-grid" id="dnaGrid">
+                            <div class="dna-stat">
+                                <div class="dna-stat-value" id="bpmValue">--</div>
+                                <div class="dna-stat-label">BPM</div>
+                            </div>
+                            <div class="dna-stat">
+                                <div class="dna-stat-value" id="keyValue">--</div>
+                                <div class="dna-stat-label">Key</div>
+                            </div>
+                            <div class="dna-stat">
+                                <div class="dna-stat-value" id="genreValue">--</div>
+                                <div class="dna-stat-label">Genre Match</div>
+                            </div>
+                            <div class="dna-stat">
+                                <div class="dna-stat-value" id="moodValue">--</div>
+                                <div class="dna-stat-label">Primary Mood</div>
+                            </div>
+                        </div>
+
+                        <!-- Waveform -->
+                        <div class="waveform-container">
+                            <canvas id="waveformCanvas"></canvas>
+                        </div>
+
+                        <!-- Mood Bars -->
+                        <div class="mood-container">
+                            <div class="mood-bar">
+                                <span class="mood-label">Energy</span>
+                                <div class="mood-track">
+                                    <div class="mood-fill energy" id="energyFill" style="width: 0%"></div>
+                                </div>
+                                <span class="mood-value" id="energyValue">0%</span>
+                            </div>
+                            <div class="mood-bar">
+                                <span class="mood-label">Happiness</span>
+                                <div class="mood-track">
+                                    <div class="mood-fill happiness" id="happinessFill" style="width: 0%"></div>
+                                </div>
+                                <span class="mood-value" id="happinessValue">0%</span>
+                            </div>
+                            <div class="mood-bar">
+                                <span class="mood-label">Danceability</span>
+                                <div class="mood-track">
+                                    <div class="mood-fill danceability" id="danceabilityFill" style="width: 0%"></div>
+                                </div>
+                                <span class="mood-value" id="danceabilityValue">0%</span>
+                            </div>
+                            <div class="mood-bar">
+                                <span class="mood-label">Aggression</span>
+                                <div class="mood-track">
+                                    <div class="mood-fill aggression" id="aggressionFill" style="width: 0%"></div>
+                                </div>
+                                <span class="mood-value" id="aggressionValue">0%</span>
+                            </div>
+                            <div class="mood-bar">
+                                <span class="mood-label">Darkness</span>
+                                <div class="mood-track">
+                                    <div class="mood-fill darkness" id="darknessFill" style="width: 0%"></div>
+                                </div>
+                                <span class="mood-value" id="darknessValue">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Energy Timeline -->
+                        <div class="energy-timeline">
+                            <div class="timeline-header">
+                                <span class="timeline-title">⚡ Energy Flow Over Time</span>
+                            </div>
+                            <canvas id="energyCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scenes Panel -->
+                <div class="results-panel" id="scenesPanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon cyan">🎬</div>
+                            <div>
+                                <div class="card-title">Sync Scene Suggestions</div>
+                                <div class="card-description">AI-generated scenes where your track would fit perfectly</div>
+                            </div>
+                        </div>
+                        <div class="scene-grid" id="sceneGrid">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proof Panel -->
+                <div class="results-panel" id="proofPanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon green">🛡️</div>
+                            <div>
+                                <div class="card-title">Proof of Creation</div>
+                                <div class="card-description">Timestamped cryptographic proof that you created this track</div>
+                            </div>
+                        </div>
+
+                        <div class="certificate-preview">
+                            <div class="certificate-badge">✓</div>
+                            <div class="certificate-title">Certificate of Creation</div>
+                            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 16px;">
+                                This certifies that the audio file was registered in ORBIT
+                            </p>
+                            <div class="certificate-hash" id="proofHash">
+                                SHA-256: Loading...
+                            </div>
+                            <div class="certificate-timestamp" id="proofTimestamp">
+                                Timestamp: Loading...
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; justify-content: center;">
+                            <button class="btn btn-primary" id="downloadCertificateBtn">📄 Download Certificate (PDF)</button>
+                            <button class="btn btn-secondary" id="copyHashBtn">📋 Copy Hash</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Panel -->
+                <div class="results-panel" id="exportPanel">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon orange">📤</div>
+                            <div>
+                                <div class="card-title">Export Options</div>
+                                <div class="card-description">Download your analysis in various formats</div>
+                            </div>
+                        </div>
+
+                        <div class="scene-grid">
+                            <div class="scene-card" id="exportJSON">
+                                <div class="scene-type">Data</div>
+                                <div class="scene-title">Full DNA Report (JSON)</div>
+                                <div class="scene-description">Complete analysis data in JSON format for integration with other tools.</div>
+                            </div>
+                            <div class="scene-card" id="exportPDF">
+                                <div class="scene-type">Document</div>
+                                <div class="scene-title">Professional Report (PDF)</div>
+                                <div class="scene-description">Beautifully formatted PDF report to share with collaborators or labels.</div>
+                            </div>
+                            <div class="scene-card" id="exportCSV">
+                                <div class="scene-type">Spreadsheet</div>
+                                <div class="scene-title">Analysis Data (CSV)</div>
+                                <div class="scene-description">Import into Excel or Google Sheets for further analysis.</div>
+                            </div>
+                            <div class="scene-card" id="exportImage">
+                                <div class="scene-type">Visual</div>
+                                <div class="scene-title">Waveform Image (PNG)</div>
+                                <div class="scene-description">High-resolution waveform visualization for social media.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- LIBRARY SECTION -->
+        <section id="librarySection" class="section">
+            <div class="page-header">
+                <div class="page-badge">Your Collection</div>
+                <h1 class="page-title">Track Library</h1>
+                <p class="page-subtitle">All your analyzed tracks, stored locally and always accessible.</p>
+            </div>
+
+            <div class="card">
+                <div id="libraryList">
+                    <p style="text-align: center; color: var(--text-muted); padding: 40px;">
+                        No tracks analyzed yet. Go to Analyze to add your first track.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOLS SECTION -->
+        <section id="toolsSection" class="section">
+            <div class="page-header">
+                <div class="page-badge">Quick Tools</div>
+                <h1 class="page-title">Creator Tools</h1>
+                <p class="page-subtitle">Handy utilities for your music business.</p>
+            </div>
+
+            <div class="scene-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon pink">🎯</div>
+                        <div>
+                            <div class="card-title">BPM Tapper</div>
+                            <div class="card-description">Tap to find the tempo</div>
+                        </div>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <div id="tappedBPM" style="font-size: 48px; font-weight: 800; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">--</div>
+                        <div style="color: var(--text-secondary); margin-bottom: 20px;">BPM</div>
+                        <button class="btn btn-primary" id="tapButton" style="width: 100%;">TAP</button>
+                        <button class="btn btn-ghost" id="resetTapBtn" style="margin-top: 10px;">Reset</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon blue">🎹</div>
+                        <div>
+                            <div class="card-title">Key Finder</div>
+                            <div class="card-description">Transpose between keys</div>
+                        </div>
+                    </div>
+                    <div style="padding: 20px;">
+                        <select id="fromKey" style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: white; margin-bottom: 12px; font-family: inherit;">
+                            <option value="">Original Key</option>
+                            <option value="C">C Major</option>
+                            <option value="C#">C# Major</option>
+                            <option value="D">D Major</option>
+                            <option value="D#">D# Major</option>
+                            <option value="E">E Major</option>
+                            <option value="F">F Major</option>
+                            <option value="F#">F# Major</option>
+                            <option value="G">G Major</option>
+                            <option value="G#">G# Major</option>
+                            <option value="A">A Major</option>
+                            <option value="A#">A# Major</option>
+                            <option value="B">B Major</option>
+                            <option value="Cm">C Minor</option>
+                            <option value="C#m">C# Minor</option>
+                            <option value="Dm">D Minor</option>
+                            <option value="D#m">D# Minor</option>
+                            <option value="Em">E Minor</option>
+                            <option value="Fm">F Minor</option>
+                            <option value="F#m">F# Minor</option>
+                            <option value="Gm">G Minor</option>
+                            <option value="G#m">G# Minor</option>
+                            <option value="Am">A Minor</option>
+                            <option value="A#m">A# Minor</option>
+                            <option value="Bm">B Minor</option>
+                        </select>
+                        <div id="compatibleKeys" style="color: var(--text-secondary); font-size: 13px;">
+                            Select a key to see compatible keys for mixing.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon green">💰</div>
+                        <div>
+                            <div class="card-title">Stream Calculator</div>
+                            <div class="card-description">Estimate your earnings</div>
+                        </div>
+                    </div>
+                    <div style="padding: 20px;">
+                        <input type="number" id="streamCount" placeholder="Number of streams" style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; color: white; margin-bottom: 12px; font-family: inherit;">
+                        <div id="earningsResult" style="font-size: 24px; font-weight: 700; color: var(--accent-green); text-align: center;">
+                            $0.00 - $0.00
+                        </div>
+                        <div style="text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 8px;">
+                            Estimated range based on $0.003-$0.005 per stream
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Hidden audio element -->
+    <audio id="audioPlayer"></audio>
+
+    <script>
+    // ============================================
+    // ORBIT - Audio DNA Analysis Engine
+    // Part 1: Core Functionality
+    // ============================================
+
+    // Global state
+    const state = {
+        currentTrack: null,
+        audioContext: null,
+        audioBuffer: null,
+        audioSource: null,
+        isPlaying: false,
+        analysisData: null,
+        library: JSON.parse(localStorage.getItem('orbitLibrary')) || []
+    };
+
+    // DOM Elements
+    const elements = {
+        uploadZone: document.getElementById('uploadZone'),
+        audioFileInput: document.getElementById('audioFileInput'),
+        progressContainer: document.getElementById('progressContainer'),
+        progressFill: document.getElementById('progressFill'),
+        progressText: document.getElementById('progressText'),
+        progressPercent: document.getElementById('progressPercent'),
+        dnaResults: document.getElementById('dnaResults'),
+        uploadCard: document.getElementById('uploadCard'),
+        audioPlayer: document.getElementById('audioPlayer')
+    };
+
+    // ============================================
+    // Navigation
+    // ============================================
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+            
+            const section = link.dataset.section;
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section + 'Section').classList.add('active');
+            
+            if (section === 'library') {
+                renderLibrary();
+            }
+        });
+    });
+
+    // Results tabs
+    document.querySelectorAll('.results-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            
+            const panel = tab.dataset.panel;
+            document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById(panel + 'Panel').classList.add('active');
+        });
+    });
+
+    // ============================================
+    // File Upload Handling
+    // ============================================
+    elements.uploadZone.addEventListener('click', () => {
+        elements.audioFileInput.click();
+    });
+
+    elements.uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        elements.uploadZone.classList.add('dragover');
+    });
+
+    elements.uploadZone.addEventListener('dragleave', () => {
+        elements.uploadZone.classList.remove('dragover');
+    });
+
+    elements.uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        elements.uploadZone.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('audio/')) {
+            processAudioFile(file);
+        }
+    });
+
+    elements.audioFileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            processAudioFile(file);
+        }
+    });
+
+    // ============================================
+    // Audio Processing
+    // ============================================
+    async function processAudioFile(file) {
+        state.currentTrack = {
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            size: file.size,
+            type: file.type,
+            timestamp: new Date().toISOString()
+        };
+
+        // Show progress
+        elements.progressContainer.classList.add('active');
+        updateProgress(5, 'Reading file...');
+
+        try {
+            // Create audio context
+            state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Read file as array buffer
+            const arrayBuffer = await file.arrayBuffer();
+            updateProgress(15, 'Decoding audio...');
+
+            // Generate hash for proof of creation
+            const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            state.currentTrack.hash = hashHex;
+
+            // Decode audio
+            state.audioBuffer = await state.audioContext.decodeAudioData(arrayBuffer.slice(0));
+            state.currentTrack.duration = state.audioBuffer.duration;
+            state.currentTrack.sampleRate = state.audioBuffer.sampleRate;
+            
+            updateProgress(30, 'Extracting audio features...');
+
+            // Set up audio player
+            const blob = new Blob([arrayBuffer], { type: file.type });
+            elements.audioPlayer.src = URL.createObjectURL(blob);
+
+            // Analyze audio
+            await analyzeAudio();
+
+        } catch (error) {
+            console.error('Error processing audio:', error);
+            alert('Error processing audio file. Please try another file.');
+            resetUpload();
+        }
+    }
+
+    function updateProgress(percent, text) {
+        elements.progressFill.style.width = percent + '%';
+        elements.progressPercent.textContent = percent + '%';
+        elements.progressText.textContent = text;
+    }
+
+    // ============================================
+    // Audio Analysis Engine
+    // ============================================
+    async function analyzeAudio() {
+        const audioData = state.audioBuffer.getChannelData(0);
+        const sampleRate = state.audioBuffer.sampleRate;
+
+        updateProgress(40, 'Analyzing tempo...');
+        
+        // Extract features
+        const features = {
+            bpm: detectBPM(audioData, sampleRate),
+            key: detectKey(audioData, sampleRate),
+            energy: calculateEnergy(audioData),
+            rms: calculateRMS(audioData),
+            spectralCentroid: calculateSpectralCentroid(audioData, sampleRate),
+            zeroCrossingRate: calculateZeroCrossingRate(audioData),
+            energyTimeline: calculateEnergyTimeline(audioData, sampleRate)
+        };
+
+        updateProgress(60, 'Calculating mood attributes...');
+
+        // Calculate mood attributes
+        features.moods = calculateMoods(features);
+        
+        updateProgress(75, 'Determining genre...');
+        
+        // Determine genre
+        features.genre = determineGenre(features);
+        
+        updateProgress(85, 'Generating scene suggestions...');
+        
+        // Generate scene suggestions
+        features.scenes = generateScenes(features, state.currentTrack.duration);
+
+        updateProgress(95, 'Finalizing analysis...');
+
+        // Store analysis
+        state.analysisData = features;
+        state.currentTrack.analysis = features;
+
+        // Save to library
+        saveToLibrary();
+
+        updateProgress(100, 'Complete!');
+
+        // Display results
+        setTimeout(() => {
+            displayResults();
+        }, 500);
+    }
+
+    // ============================================
+    // BPM Detection
+    // ============================================
+    function detectBPM(audioData, sampleRate) {
+        // Energy-based beat detection
+        const bufferSize = 1024;
+        const energies = [];
+        
+        for (let i = 0; i < audioData.length - bufferSize; i += bufferSize) {
+            let energy = 0;
+            for (let j = 0; j < bufferSize; j++) {
+                energy += audioData[i + j] * audioData[i + j];
+            }
+            energies.push(energy / bufferSize);
+        }
+
+        // Find peaks (beats)
+        const threshold = energies.reduce((a, b) => a + b) / energies.length * 1.5;
+        const peaks = [];
+        let lastPeak = -Infinity;
+
+        for (let i = 1; i < energies.length - 1; i++) {
+            if (energies[i] > threshold && 
+                energies[i] > energies[i-1] && 
+                energies[i] > energies[i+1] &&
+                i - lastPeak > 10) {
+                peaks.push(i);
+                lastPeak = i;
+            }
+        }
+
+        // Calculate average interval between peaks
+        if (peaks.length < 2) return 120; // Default
+
+        let intervals = [];
+        for (let i = 1; i < Math.min(peaks.length, 50); i++) {
+            intervals.push(peaks[i] - peaks[i-1]);
+        }
+
+        const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+        const secondsPerBeat = (avgInterval * bufferSize) / sampleRate;
+        let bpm = Math.round(60 / secondsPerBeat);
+
+        // Normalize BPM to reasonable range
+        while (bpm < 60) bpm *= 2;
+        while (bpm > 200) bpm /= 2;
+
+        return Math.round(bpm);
+    }
+
+    // ============================================
+    // Key Detection
+    // ============================================
+    function detectKey(audioData, sampleRate) {
+        // Simplified key detection using chroma features
+        const fftSize = 4096;
+        const chromaBins = new Float32Array(12);
+        
+        // Note frequencies for one octave
+        const noteFreqs = [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 
+                          369.99, 392.00, 415.30, 440.00, 466.16, 493.88];
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+
+        // Simple FFT-based analysis
+        const numChunks = Math.floor(audioData.length / fftSize);
+        
+        for (let chunk = 0; chunk < Math.min(numChunks, 100); chunk++) {
+            const start = chunk * fftSize;
+            const slice = audioData.slice(start, start + fftSize);
+            
+            // Basic frequency analysis
+            for (let i = 0; i < 12; i++) {
+                const freq = noteFreqs[i];
+                const period = sampleRate / freq;
+                let correlation = 0;
+                
+                for (let j = 0; j < fftSize - period; j++) {
+                    correlation += slice[j] * slice[Math.floor(j + period)];
+                }
+                chromaBins[i] += Math.abs(correlation);
+            }
+        }
+
+        // Find dominant note
+        let maxChroma = 0;
+        let keyIndex = 0;
+        for (let i = 0; i < 12; i++) {
+            if (chromaBins[i] > maxChroma) {
+                maxChroma = chromaBins[i];
+                keyIndex = i;
+            }
+        }
+
+        // Determine major/minor based on third interval
+        const thirdIndex = (keyIndex + 4) % 12; // Major third
+        const minorThirdIndex = (keyIndex + 3) % 12; // Minor third
+        
+        const isMinor = chromaBins[minorThirdIndex] > chromaBins[thirdIndex];
+        
+        return noteNames[keyIndex] + (isMinor ? 'm' : '');
+    }
+
+    // ============================================
+    // Audio Feature Calculations
+    // ============================================
+    function calculateEnergy(audioData) {
+        let sum = 0;
+        for (let i = 0; i < audioData.length; i++) {
+            sum += audioData[i] * audioData[i];
+        }
+        return Math.sqrt(sum / audioData.length);
+    }
+
+    function calculateRMS(audioData) {
+        let sum = 0;
+        for (let i = 0; i < audioData.length; i++) {
+            sum += audioData[i] * audioData[i];
+        }
+        return Math.sqrt(sum / audioData.length);
+    }
+
+    function calculateSpectralCentroid(audioData, sampleRate) {
+        // Simplified spectral centroid
+        let weightedSum = 0;
+        let sum = 0;
+        
+        for (let i = 0; i < audioData.length; i++) {
+            const magnitude = Math.abs(audioData[i]);
+            weightedSum += i * magnitude;
+            sum += magnitude;
+        }
+        
+        if (sum === 0) return 0;
+        return (weightedSum / sum) * (sampleRate / audioData.length);
+    }
+
+    function calculateZeroCrossingRate(audioData) {
+        let crossings = 0;
+        for (let i = 1; i < audioData.length; i++) {
+            if ((audioData[i] >= 0 && audioData[i-1] < 0) || 
+                (audioData[i] < 0 && audioData[i-1] >= 0)) {
+                crossings++;
+            }
+        }
+        return crossings / audioData.length;
+    }
+
+    function calculateEnergyTimeline(audioData, sampleRate) {
+        const windowSize = Math.floor(sampleRate * 0.5); // 0.5 second windows
+        const timeline = [];
+        
+        for (let i = 0; i < audioData.length; i += windowSize) {
+            const end = Math.min(i + windowSize, audioData.length);
+            let energy = 0;
+            for (let j = i; j < end; j++) {
+                energy += audioData[j] * audioData[j];
+            }
+            timeline.push(Math.sqrt(energy / (end - i)));
+        }
+
+        // Normalize
+        const maxEnergy = Math.max(...timeline);
+        return timeline.map(e => maxEnergy > 0 ? e / maxEnergy : 0);
+    }
+
+    // ============================================
+    // Mood Calculation
+    // ============================================
+    function calculateMoods(features) {
+        // Normalize values to 0-100
+        const energyNorm = Math.min(features.energy * 500, 100);
+        const spectralNorm = Math.min(features.spectralCentroid / 50, 100);
+        const zcrNorm = Math.min(features.zeroCrossingRate * 5000, 100);
+
+        // BPM influence
+        const bpmFactor = (features.bpm - 60) / 140; // 0 at 60 BPM, 1 at 200 BPM
+
+        return {
+            energy: Math.round(Math.min(100, energyNorm * 0.5 + bpmFactor * 50)),
+            happiness: Math.round(Math.min(100, spectralNorm * 0.6 + (features.key.includes('m') ? 20 : 50))),
+            danceability: Math.round(Math.min(100, bpmFactor * 60 + energyNorm * 0.4)),
+            aggression: Math.round(Math.min(100, zcrNorm * 0.5 + energyNorm * 0.3)),
+            darkness: Math.round(Math.min(100, (features.key.includes('m') ? 60 : 30) + (100 - spectralNorm) * 0.4))
+        };
+    }
+
+    // ============================================
+    // Genre Detection
+    // ============================================
+    function determineGenre(features) {
+        const bpm = features.bpm;
+        const energy = features.moods.energy;
+        const darkness = features.moods.darkness;
+        const danceability = features.moods.danceability;
+
+        // Genre rules based on audio characteristics
+        if (bpm >= 140 && bpm <= 160 && energy > 70) return 'Trap';
+        if (bpm >= 85 && bpm <= 115 && darkness > 50) return 'Hip-Hop';
+        if (bpm >= 120 && bpm <= 130 && danceability > 70) return 'House';
+        if (bpm >= 170 && bpm <= 180) return 'Drum & Bass';
+        if (bpm >= 65 && bpm <= 85 && energy < 50) return 'R&B';
+        if (bpm >= 100 && bpm <= 130 && energy > 60) return 'Pop';
+        if (bpm >= 130 && bpm <= 150 && energy > 80) return 'EDM';
+        if (bpm >= 60 && bpm <= 90 && darkness > 60) return 'Lo-Fi';
+        if (energy < 40) return 'Ambient';
+        
+        return 'Electronic';
+    }
+
+    // ============================================
+    // Scene Generation
+    // ============================================
+    function generateScenes(features, duration) {
+        const scenes = [];
+        const moods = features.moods;
+        const genre = features.genre;
+        const timeline = features.energyTimeline;
+
+        // Scene templates based on mood combinations
+        const sceneTemplates = {
+            highEnergy: [
+                { type: 'Film', title: 'Chase Sequence', description: 'Fast-paced pursuit through urban streets. Quick cuts, handheld camera, adrenaline pumping.' },
+                { type: 'Commercial', title: 'Sports Brand Ad', description: 'Athletes pushing their limits. Sweat, determination, victory moment.' },
+                { type: 'TV', title: 'Competition Show Climax', description: 'Final round tension, crowd reactions, dramatic reveal.' },
+                { type: 'Gaming', title: 'Boss Battle', description: 'Epic confrontation, power moves, victory celebration.' }
+            ],
+            dark: [
+                { type: 'Film', title: 'Villain Introduction', description: 'Shadowy figure emerges. Slow reveal, ominous presence, power established.' },
+                { type: 'TV', title: 'Crime Drama Opening', description: 'City at night, neon reflections, something sinister brewing.' },
+                { type: 'Commercial', title: 'Luxury Watch/Car', description: 'Sleek, mysterious, sophisticated. The art of precision.' },
+                { type: 'Gaming', title: 'Stealth Mission', description: 'Infiltration sequence, shadows, careful movements.' }
+            ],
+            happy: [
+                { type: 'Commercial', title: 'Summer Campaign', description: 'Beach vibes, friends laughing, golden hour everything.' },
+                { type: 'Film', title: 'Victory Montage', description: 'Hero celebrates, community comes together, hope restored.' },
+                { type: 'TV', title: 'Sitcom Intro', description: 'Cast moments, urban lifestyle, relatable chaos.' },
+                { type: 'Social', title: 'Lifestyle Content', description: 'Day in the life, aesthetic moments, aspirational living.' }
+            ],
+            danceable: [
+                { type: 'Commercial', title: 'Fashion Brand', description: 'Models in motion, fabric flowing, urban runway.' },
+                { type: 'Film', title: 'Club Scene', description: 'Lights pulsing, crowd moving, protagonist searching.' },
+                { type: 'TV', title: 'Reality Show Transition', description: 'Quick cuts, personality moments, drama building.' },
+                { type: 'Social', title: 'Viral Dance Trend', description: 'Choreography hook, challenge potential, shareable energy.' }
+            ],
+            aggressive: [
+                { type: 'Film', title: 'Fight Scene', description: 'Controlled chaos, skilled combat, personal stakes.' },
+                { type: 'Gaming', title: 'Action Trailer', description: 'Explosions, quick gameplay cuts, intensity building.' },
+                { type: 'Commercial', title: 'Energy Drink', description: 'Extreme sports, pushing limits, no fear.' },
+                { type: 'TV', title: 'Sports Highlight Reel', description: 'Best plays, crowd reactions, championship moments.' }
+            ]
+        };
+
+        // Select scenes based on dominant moods
+        const dominantMoods = Object.entries(moods)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+
+        dominantMoods.forEach(([mood, value]) => {
+            if (value > 50) {
+                let templates;
+                switch(mood) {
+                    case 'energy': templates = sceneTemplates.highEnergy; break;
+                    case 'darkness': templates = sceneTemplates.dark; break;
+                    case 'happiness': templates = sceneTemplates.happy; break;
+                    case 'danceability': templates = sceneTemplates.danceable; break;
+                    case 'aggression': templates = sceneTemplates.aggressive; break;
+                    default: templates = sceneTemplates.high    // ============================================
+    // BPM Detection (Advanced)
+    // ============================================
+    function detectBPM(audioData, sampleRate) {
+        const bufferSize = 2048;
+        const hopSize = 512;
+        const energies = [];
+        
+        // Calculate energy in overlapping windows
+        for (let i = 0; i < audioData.length - bufferSize; i += hopSize) {
+            let energy = 0;
+            for (let j = 0; j < bufferSize; j++) {
+                energy += Math.abs(audioData[i + j]);
+            }
+            energies.push(energy / bufferSize);
+        }
+
+        // Compute difference function (onset detection)
+        const diff = [];
+        for (let i = 1; i < energies.length; i++) {
+            diff.push(Math.max(0, energies[i] - energies[i - 1]));
+        }
+
+        // Normalize
+        const maxDiff = Math.max(...diff);
+        const normalizedDiff = diff.map(d => d / maxDiff);
+
+        // Find peaks (onsets/beats)
+        const threshold = 0.3;
+        const minPeakDistance = Math.floor(sampleRate / hopSize * 0.2); // Min 200ms between beats
+        const peaks = [];
+        let lastPeak = -minPeakDistance;
+
+        for (let i = 2; i < normalizedDiff.length - 2; i++) {
+            if (normalizedDiff[i] > threshold &&
+                normalizedDiff[i] > normalizedDiff[i - 1] &&
+                normalizedDiff[i] > normalizedDiff[i - 2] &&
+                normalizedDiff[i] >= normalizedDiff[i + 1] &&
+                normalizedDiff[i] >= normalizedDiff[i + 2] &&
+                i - lastPeak >= minPeakDistance) {
+                peaks.push(i);
+                lastPeak = i;
+            }
+        }
+
+        if (peaks.length < 4) {
+            // Fallback: use autocorrelation
+            return detectBPMAutocorrelation(audioData, sampleRate);
+        }
+
+        // Calculate intervals between peaks
+        const intervals = [];
+        for (let i = 1; i < peaks.length; i++) {
+            intervals.push(peaks[i] - peaks[i - 1]);
+        }
+
+        // Find most common interval using histogram
+        const histogram = {};
+        intervals.forEach(interval => {
+            // Quantize to reduce noise
+            const quantized = Math.round(interval / 2) * 2;
+            histogram[quantized] = (histogram[quantized] || 0) + 1;
+        });
+
+        // Find peak in histogram
+        let maxCount = 0;
+        let dominantInterval = intervals[0];
+        for (const [interval, count] of Object.entries(histogram)) {
+            if (count > maxCount) {
+                maxCount = count;
+                dominantInterval = parseInt(interval);
+            }
+        }
+
+        // Convert to BPM
+        const secondsPerBeat = (dominantInterval * hopSize) / sampleRate;
+        let bpm = Math.round(60 / secondsPerBeat);
+
+        // Normalize to reasonable range (60-200 BPM)
+        while (bpm < 60) bpm *= 2;
+        while (bpm > 200) bpm /= 2;
+
+        // Round to nearest whole number
+        return Math.round(bpm);
+    }
+
+    // Fallback BPM detection using autocorrelation
+    function detectBPMAutocorrelation(audioData, sampleRate) {
+        const maxLag = Math.floor(sampleRate * 1.5); // Up to 1.5 seconds (40 BPM)
+        const minLag = Math.floor(sampleRate * 0.3); // Min 0.3 seconds (200 BPM)
+        
+        // Downsample for performance
+        const downsampleFactor = 4;
+        const downsampled = [];
+        for (let i = 0; i < audioData.length; i += downsampleFactor) {
+            downsampled.push(audioData[i]);
+        }
+
+        const adjustedMaxLag = Math.floor(maxLag / downsampleFactor);
+        const adjustedMinLag = Math.floor(minLag / downsampleFactor);
+
+        // Compute autocorrelation
+        const correlations = [];
+        for (let lag = adjustedMinLag; lag < adjustedMaxLag; lag++) {
+            let correlation = 0;
+            const windowSize = Math.min(downsampled.length - lag, 10000);
+            
+            for (let i = 0; i < windowSize; i++) {
+                correlation += downsampled[i] * downsampled[i + lag];
+            }
+            correlations.push({ lag: lag * downsampleFactor, value: correlation });
+        }
+
+        // Find peak
+        let maxCorr = 0;
+        let bestLag = sampleRate / 2; // Default 120 BPM
+        
+        correlations.forEach(({ lag, value }) => {
+            if (value > maxCorr) {
+                maxCorr = value;
+                bestLag = lag;
+            }
+        });
+
+        let bpm = Math.round(60 / (bestLag / sampleRate));
+        
+        while (bpm < 60) bpm *= 2;
+        while (bpm > 200) bpm /= 2;
+
+        return Math.round(bpm);
+    }
+
+    // ============================================
+    // Key Detection
+    // ============================================
+    function detectKey(audioData, sampleRate) {
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        
+        // Krumhansl-Kessler key profiles
+        const majorProfile = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+        const minorProfile = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+
+        // Calculate chroma features
+        const chroma = calculateChroma(audioData, sampleRate);
+
+        // Correlate with all possible keys
+        let bestKey = 'C';
+        let bestCorrelation = -Infinity;
+
+        for (let i = 0; i < 12; i++) {
+            // Rotate chroma to align with current root note
+            const rotatedChroma = [...chroma.slice(i), ...chroma.slice(0, i)];
+
+            // Check major
+            const majorCorr = pearsonCorrelation(rotatedChroma, majorProfile);
+            if (majorCorr > bestCorrelation) {
+                bestCorrelation = majorCorr;
+                bestKey = noteNames[i];
+            }
+
+            // Check minor
+            const minorCorr = pearsonCorrelation(rotatedChroma, minorProfile);
+            if (minorCorr > bestCorrelation) {
+                bestCorrelation = minorCorr;
+                bestKey = noteNames[i] + 'm';
+            }
+        }
+
+        return bestKey;
+    }
+
+    function calculateChroma(audioData, sampleRate) {
+        const chroma = new Array(12).fill(0);
+        const fftSize = 4096;
+        const numFrames = Math.floor(audioData.length / fftSize);
+        
+        // Reference frequencies for each chroma bin (C4 = 261.63 Hz)
+        const refFreqs = [
+            261.63, 277.18, 293.66, 311.13, 329.63, 349.23,
+            369.99, 392.00, 415.30, 440.00, 466.16, 493.88
+        ];
+
+        for (let frame = 0; frame < Math.min(numFrames, 50); frame++) {
+            const start = frame * fftSize;
+            const frameData = audioData.slice(start, start + fftSize);
+            
+            // Apply Hann window
+            const windowed = applyWindow(frameData);
+            
+            // Simple DFT for specific frequencies
+            for (let chromaIdx = 0; chromaIdx < 12; chromaIdx++) {
+                // Check multiple octaves
+                for (let octave = 0; octave < 4; octave++) {
+                    const freq = refFreqs[chromaIdx] * Math.pow(2, octave - 1);
+                    const magnitude = goertzel(windowed, freq, sampleRate);
+                    chroma[chromaIdx] += magnitude;
+                }
+            }
+        }
+
+        // Normalize chroma vector
+        const maxChroma = Math.max(...chroma);
+        if (maxChroma > 0) {
+            for (let i = 0; i < 12; i++) {
+                chroma[i] /= maxChroma;
+            }
+        }
+
+        return chroma;
+    }
+
+    function applyWindow(data) {
+        const windowed = new Float32Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+            // Hann window
+            const multiplier = 0.5 * (1 - Math.cos(2 * Math.PI * i / (data.length - 1)));
+            windowed[i] = data[i] * multiplier;
+        }
+        return windowed;
+    }
+
+    function goertzel(data, targetFreq, sampleRate) {
+        const k = Math.round(targetFreq * data.length / sampleRate);
+        const w = 2 * Math.PI * k / data.length;
+        const coeff = 2 * Math.cos(w);
+        
+        let s0 = 0, s1 = 0, s2 = 0;
+        
+        for (let i = 0; i < data.length; i++) {
+            s0 = data[i] + coeff * s1 - s2;
+            s2 = s1;
+            s1 = s0;
+        }
+        
+        return Math.sqrt(s1 * s1 + s2 * s2 - coeff * s1 * s2);
+    }
+
+    function pearsonCorrelation(x, y) {
+        const n = x.length;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, sumY2 = 0;
+        
+        for (let i = 0; i < n; i++) {
+            sumX += x[i];
+            sumY += y[i];
+            sumXY += x[i] * y[i];
+            sumX2 += x[i] * x[i];
+            sumY2 += y[i] * y[i];
+        }
+        
+        const numerator = n * sumXY - sumX * sumY;
+        const denominator = Math.sqrt((n * sumX2 - sumX * sumX) * (n * sumY2 - sumY * sumY));
+        
+        return denominator === 0 ? 0 : numerator / denominator;
+    }
+
+    // ============================================
+    // Audio Feature Calculations
+    // ============================================
+    function calculateEnergy(audioData) {
+        let sum = 0;
+        for (let i = 0; i < audioData.length; i++) {
+            sum += audioData[i] * audioData[i];
+        }
+        return Math.sqrt(sum / audioData.length);
+    }
+
+    function calculateRMS(audioData) {
+        let sum = 0;
+        const sampleSize = Math.min(audioData.length, 100000);
+        const step = Math.floor(audioData.length / sampleSize);
+        
+        for (let i = 0; i < audioData.length; i += step) {
+            sum += audioData[i] * audioData[i];
+        }
+        return Math.sqrt(sum / (audioData.length / step));
+    }
+
+    function calculateSpectralCentroid(audioData, sampleRate) {
+        const fftSize = 2048;
+        const numFrames = Math.min(Math.floor(audioData.length / fftSize), 100);
+        let totalCentroid = 0;
+
+        for (let frame = 0; frame < numFrames; frame++) {
+            const start = frame * fftSize;
+            const frameData = audioData.slice(start, start + fftSize);
+            
+            // Simple magnitude spectrum estimation
+            let weightedSum = 0;
+            let magnitudeSum = 0;
+            
+            for (let i = 0; i < fftSize / 2; i++) {
+                const freq = i * sampleRate / fftSize;
+                const magnitude = Math.abs(frameData[i * 2] || 0) + Math.abs(frameData[i * 2 + 1] || 0);
+                weightedSum += freq * magnitude;
+                magnitudeSum += magnitude;
+            }
+            
+            if (magnitudeSum > 0) {
+                totalCentroid += weightedSum / magnitudeSum;
+            }
+        }
+
+        return totalCentroid / numFrames;
+    }
+
+    function calculateZeroCrossingRate(audioData) {
+        let crossings = 0;
+        const sampleSize = Math.min(audioData.length, 200000);
+        const step = Math.floor(audioData.length / sampleSize);
+        
+        let prevSign = audioData[0] >= 0;
+        
+        for (let i = step; i < audioData.length; i += step) {
+            const currentSign = audioData[i] >= 0;
+            if (currentSign !== prevSign) {
+                crossings++;
+            }
+            prevSign = currentSign;
+        }
+        
+        return crossings / (audioData.length / step);
+    }
+
+    function calculateEnergyTimeline(audioData, sampleRate) {
+        const windowDuration = 0.5; // 500ms windows
+        const windowSize = Math.floor(sampleRate * windowDuration);
+        const timeline = [];
+        
+        for (let i = 0; i < audioData.length; i += windowSize) {
+            const end = Math.min(i + windowSize, audioData.length);
+            let energy = 0;
+            
+            for (let j = i; j < end; j++) {
+                energy += audioData[j] * audioData[j];
+            }
+            
+            timeline.push(Math.sqrt(energy / (end - i)));
+        }
+
+        // Normalize to 0-1 range
+        const maxEnergy = Math.max(...timeline);
+        if (maxEnergy > 0) {
+            return timeline.map(e => e / maxEnergy);
+        }
+        return timeline;
+    }
+
+    // ============================================
+    // Mood Calculation System
+    // ============================================
+    function calculateMoods(features) {
+        const bpm = features.bpm;
+        const energy = features.energy;
+        const spectralCentroid = features.spectralCentroid;
+        const zcr = features.zeroCrossingRate;
+        const key = features.key;
+        const isMinor = key.includes('m');
+
+        // Normalize raw features
+        const normalizedEnergy = Math.min(energy * 400, 1);
+        const normalizedSpectral = Math.min(spectralCentroid / 4000, 1);
+        const normalizedZCR = Math.min(zcr * 20, 1);
+        const normalizedBPM = (bpm - 60) / 140; // 0 at 60 BPM, 1 at 200 BPM
+
+        // Calculate mood dimensions
+        
+        // ENERGY: Based on RMS energy, BPM, and ZCR
+        const energyMood = Math.round(
+            (normalizedEnergy * 0.4 + normalizedBPM * 0.4 + normalizedZCR * 0.2) * 100
+        );
+
+        // HAPPINESS: Based on key (major/minor), spectral brightness, and tempo
+        const happinessMood = Math.round(
+            ((isMinor ? 0.2 : 0.6) + normalizedSpectral * 0.25 + normalizedBPM * 0.15) * 100
+        );
+
+        // DANCEABILITY: Based on tempo being in danceable range, energy, rhythm clarity
+        const danceableBPMScore = bpm >= 100 && bpm <= 130 ? 1 : 
+                                   bpm >= 85 && bpm <= 145 ? 0.7 : 0.4;
+        const danceabilityMood = Math.round(
+            (danceableBPMScore * 0.5 + normalizedEnergy * 0.3 + (1 - Math.abs(normalizedBPM - 0.5)) * 0.2) * 100
+        );
+
+        // AGGRESSION: Based on ZCR (harsh sounds), energy, and fast tempo
+        const aggressionMood = Math.round(
+            (normalizedZCR * 0.4 + normalizedEnergy * 0.35 + normalizedBPM * 0.25) * 100
+        );
+
+        // DARKNESS: Based on minor key, low spectral centroid, slower tempo
+        const darknessMood = Math.round(
+            ((isMinor ? 0.5 : 0.15) + (1 - normalizedSpectral) * 0.3 + (1 - normalizedBPM) * 0.2) * 100
+        );
+
+        // Clamp all values to 0-100
+        return {
+            energy: Math.max(0, Math.min(100, energyMood)),
+            happiness: Math.max(0, Math.min(100, happinessMood)),
+            danceability: Math.max(0, Math.min(100, danceabilityMood)),
+            aggression: Math.max(0, Math.min(100, aggressionMood)),
+            darkness: Math.max(0, Math.min(100, darknessMood))
+        };
+    }
+
+    // ============================================
+    // Genre Detection System
+    // ============================================
+    function determineGenre(features) {
+        const bpm = features.bpm;
+        const moods = features.moods;
+        const key = features.key;
+        
+        // Genre scoring system
+        const genres = {
+            'Trap': 0,
+            'Hip-Hop': 0,
+            'R&B': 0,
+            'Pop': 0,
+            'House': 0,
+            'Techno': 0,
+            'Drum & Bass': 0,
+            'Lo-Fi': 0,
+            'EDM': 0,
+            'Ambient': 0,
+            'Rock': 0,
+            'Indie': 0
+        };
+
+        // BPM-based scoring
+        if (bpm >= 130 && bpm <= 150) {
+            genres['Trap'] += 30;
+            genres['EDM'] += 20;
+        }
+        if (bpm >= 85 && bpm <= 115) {
+            genres['Hip-Hop'] += 30;
+            genres['R&B'] += 20;
+        }
+        if (bpm >= 118 && bpm <= 135) {
+            genres['House'] += 30;
+            genres['Pop'] += 15;
+        }
+        if (bpm >= 130 && bpm <= 150) {
+            genres['Techno'] += 25;
+        }
+        if (bpm >= 160 && bpm <= 180) {
+            genres['Drum & Bass'] += 40;
+        }
+        if (bpm >= 70 && bpm <= 95) {
+            genres['Lo-Fi'] += 25;
+            genres['R&B'] += 15;
+        }
+        if (bpm >= 100 && bpm <= 140) {
+            genres['Rock'] += 15;
+            genres['Indie'] += 15;
+        }
+        if (bpm < 80) {
+            genres['Ambient'] += 30;
+        }
+
+        // Mood-based scoring
+        if (moods.energy > 70) {
+            genres['EDM'] += 20;
+            genres['Trap'] += 15;
+            genres['Drum & Bass'] += 15;
+            genres['Rock'] += 15;
+        }
+        if (moods.energy < 40) {
+            genres['Lo-Fi'] += 25;
+            genres['Ambient'] += 25;
+            genres['R&B'] += 10;
+        }
+        if (moods.darkness > 60) {
+            genres['Trap'] += 15;
+            genres['Techno'] += 15;
+            genres['Hip-Hop'] += 10;
+        }
+        if (moods.happiness > 60) {
+            genres['Pop'] += 20;
+            genres['House'] += 15;
+            genres['Indie'] += 10;
+        }
+        if (moods.danceability > 70) {
+            genres['House'] += 20;
+            genres['EDM'] += 15;
+            genres['Pop'] += 10;
+        }
+        if (moods.aggression > 65) {
+            genres['Trap'] += 15;
+            genres['Rock'] += 20;
+            genres['Drum & Bass'] += 10;
+        }
+
+        // Find highest scoring genre
+        let bestGenre = 'Electronic';
+        let highestScore = 0;
+
+        for (const [genre, score] of Object.entries(genres)) {
+            if (score > highestScore) {
+                highestScore = score;
+                bestGenre = genre;
+            }
+        }
+
+        return bestGenre;
+    }
+
+    // ============================================
+    // Scene Generation Engine
+    // ============================================
+    function generateScenes(features, duration) {
+        const scenes = [];
+        const moods = features.moods;
+        const bpm = features.bpm;
+        const genre = features.genre;
+        const timeline = features.energyTimeline;
+
+        // Comprehensive scene database
+        const sceneDatabase = {
+            // HIGH ENERGY SCENES
+            highEnergy: [
+                {
+                    type: 'Film',
+                    title: 'Car Chase Through City',
+                    description: 'Tires screeching through rain-slicked streets. Quick cuts between driver focus and speedometer climbing. Neon reflections blur past.',
+                    fit: 95
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Athletic Brand Campaign',
+                    description: 'Athletes in slow-motion bursts of power. Sweat droplets catching light. The moment before victory.',
+                    fit: 90
+                },
+                {
+                    type: 'TV Series',
+                    title: 'Heist Execution Sequence',
+                    description: 'The plan unfolds in real-time. Split screens, synchronized watches, team moving like clockwork.',
+                    fit: 88
+                },
+                {
+                    type: 'Gaming Trailer',
+                    title: 'Action Game Launch',
+                    description: 'Rapid gameplay cuts, explosions, character reveals. "Available Now" hits on the drop.',
+                    fit: 92
+                },
+                {
+                    type: 'Sports',
+                    title: 'Championship Highlight Reel',
+                    description: 'Season-defining moments. Crowd eruptions. The shot that changed everything.',
+                    fit: 87
+                }
+            ],
+            
+            // DARK/MOODY SCENES
+            dark: [
+                {
+                    type: 'Film',
+                    title: 'Antagonist Introduction',
+                    description: 'Shadow-draped figure walks through industrial space. Each step echoes. We see power before we see face.',
+                    fit: 94
+                },
+                {
+                    type: 'TV Series',
+                    title: 'Crime Drama Cold Open',
+                    description: 'City skyline at 3AM. Something happened here. Yellow tape flutters as detective arrives.',
+                    fit: 91
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Luxury Automotive Night',
+                    description: 'Sleek vehicle cuts through darkness. Headlights reveal just enough. Sophistication in shadow.',
+                    fit: 89
+                },
+                {
+                    type: 'Film',
+                    title: 'Underground Club Entry',
+                    description: 'Down unmarked stairs. Bass vibrates the walls. A world hidden from daylight.',
+                    fit: 86
+                },
+                {
+                    type: 'Gaming',
+                    title: 'Horror Game Ambiance',
+                    description: 'Corridors stretch into darkness. Something moved. Flashlight battery: 23%.',
+                    fit: 85
+                }
+            ],
+            
+            // HAPPY/UPLIFTING SCENES
+            happy: [
+                {
+                    type: 'Commercial',
+                    title: 'Summer Beverage Launch',
+                    description: 'Rooftop party, golden hour. Condensation drips down bottles. Laughter you can almost hear.',
+                    fit: 93
+                },
+                {
+                    type: 'Film',
+                    title: 'Training Montage Victory',
+                    description: 'Every failure led here. The team finally clicks. High fives in slow motion.',
+                    fit: 90
+                },
+                {
+                    type: 'TV Series',
+                    title: 'Coming-of-Age Breakthrough',
+                    description: 'First time feeling free. Windows down, singing wrong lyrics loudly, not caring.',
+                    fit: 88
+                },
+                {
+                    type: 'Social Media',
+                    title: 'Travel Vlog Highlight',
+                    description: 'Passport stamps and sunrise hikes. The world is bigger than your hometown.',
+                    fit: 91
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Tech Product Unboxing',
+                    description: 'Clean hands, cleaner desk. The satisfying peel of protective film. Possibilities power on.',
+                    fit: 84
+                }
+            ],
+            
+            // DANCEABLE SCENES
+            danceable: [
+                {
+                    type: 'Commercial',
+                    title: 'Fashion Week Runway',
+                    description: 'Models stride in sync with bass. Fabric moves like liquid. Front row phones capture everything.',
+                    fit: 95
+                },
+                {
+                    type: 'Film',
+                    title: 'Club Scene - The Meeting',
+                    description: 'Protagonist scans the room. Strobe lights freeze moments. Eyes meet across the dance floor.',
+                    fit: 92
+                },
+                {
+                    type: 'TV Series',
+                    title: 'Reality Show Transition',
+                    description: 'Drama from couch to confessional. Dramatic walks. Wine glasses set down too hard.',
+                    fit: 87
+                },
+                {
+                    type: 'Social Media',
+                    title: 'Viral Dance Challenge',
+                    description: 'Learn it. Film it. Tag it. The algorithm rewards the bold.',
+                    fit: 94
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Streetwear Drop Announcement',
+                    description: 'Urban backdrop, limited edition. Line forms at midnight. Culture moves fast.',
+                    fit: 89
+                }
+            ],
+            
+            // AGGRESSIVE SCENES
+            aggressive: [
+                {
+                    type: 'Film',
+                    title: 'One-Take Fight Corridor',
+                    description: 'No cuts, no mercy. Our hero clears the hallway. Each hit lands with the beat.',
+                    fit: 96
+                },
+                {
+                    type: 'Gaming Trailer',
+                    title: 'FPS Campaign Reveal',
+                    description: 'Reload. Advance. Reload. The enemy never saw the flank coming.',
+                    fit: 93
+                },
+                {
+                    type: 'Sports',
+                    title: 'MMA/Boxing Promo',
+                    description: 'Two warriors. One cage. Training montage intercut with weigh-in staredown.',
+                    fit: 95
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Energy Drink Extreme',
+                    description: 'Skateboard tricks, BASE jumps, questionable decisions. No fear sponsored.',
+                    fit: 88
+                },
+                {
+                    type: 'TV Series',
+                    title: 'Action Show Set Piece',
+                    description: 'The safehouse is compromised. Three minutes to extract. Go loud.',
+                    fit: 90
+                }
+            ],
+            
+            // CHILL/AMBIENT SCENES
+            chill: [
+                {
+                    type: 'Film',
+                    title: 'Reflective Drive Home',
+                    description: 'City lights pass in silence. The conversation replays in their head. What now?',
+                    fit: 92
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Meditation App Promo',
+                    description: 'Breath in. Hold. Release. The chaos fades to background noise.',
+                    fit: 94
+                },
+                {
+                    type: 'TV Series',
+                    title: 'End of Episode Montage',
+                    description: 'Each character in their own world. Stories converge. To be continued.',
+                    fit: 89
+                },
+                {
+                    type: 'Social Media',
+                    title: 'Aesthetic Study Vlog',
+                    description: 'Coffee steam rises. Pages turn. The library is a cathedral of focus.',
+                    fit: 91
+                },
+                {
+                    type: 'Commercial',
+                    title: 'Skincare Night Routine',
+                    description: 'Soft lighting, softer products. Self-care as ritual. Tomorrow starts tonight.',
+                    fit: 87
+                }
+            ]
+        };
+
+        // Determine which scene categories to pull from based on moods
+        const sceneCategories = [];
+        
+        if (moods.energy > 65) sceneCategories.push({ cat: 'highEnergy', weight: moods.energy });
+        if (moods.darkness > 55) sceneCategories.push({ cat: 'dark', weight: moods.darkness });
+        if (moods.happiness > 55) sceneCategories.push({ cat: 'happy', weight: moods.happiness });
+        if (moods.danceability > 60) sceneCategories.push({ cat: 'danceable', weight: moods.danceability });
+        if (moods.aggression > 60) sceneCategories.push({ cat: 'aggressive', weight: moods.aggression });
+        if (moods.energy < 45) sceneCategories.push({ cat: 'chill', weight: 100 - moods.energy });
+
+        // If no strong moods, default to most prominent
+        if (sceneCategories.length === 0) {
+            const sortedMoods = Object.entries(moods).sort((a, b) => b[1] - a[1]);
+            const topMood = sortedMoods[0][0];
+            
+            const moodToCat = {
+                energy: 'highEnergy',
+                darkness: 'dark',
+                happiness: 'happy',
+                danceability: 'danceable',
+                aggression: 'aggressive'
+            };
+            
+            sceneCategories.push({ cat: moodToCat[topMood] || 'highEnergy', weight: 70 });
+        }
+
+        // Sort by weight and pick scenes
+        sceneCategories.sort((a, b) => b.weight - a.weight);
+        
+        const selectedScenes = [];
+        const usedTypes = new Set();
+
+        sceneCategories.forEach(({ cat }) => {
+            const categoryScenes = sceneDatabase[cat] || [];
+            
+            categoryScenes.forEach(scene => {
+                // Avoid duplicate types for variety
+                if (!usedTypes.has(scene.type + scene.title) && selectedScenes.length < 6) {
+                    selectedScenes.push({
+                        ...scene,
+                        timestamp: getSceneTimestamp(timeline, duration, selectedScenes.length)
+                    });
+                    usedTypes.add(scene.type + scene.title);
+                }
+            });
+        });
+
+        return selectedScenes.slice(0, 6);
+    }
+
+    function getSceneTimestamp(timeline, duration, index) {
+        // Find interesting moments in the track based on energy changes
+        if (!timeline || timeline.length === 0) {
+            return formatTime(duration * (index / 6));
+        }
+
+        // Find peaks and valleys
+        const moments = [];
+        for (let i = 1; i < timeline.length - 1; i++) {
+            const isPeak = timeline[i] > timeline[i-1] && timeline[i] > timeline[i+1] && timeline[i] > 0.6;
+            const isDrop = timeline[i] < timeline[i-1] && timeline[i] < timeline[i+1] && timeline[i-1] > 0.5;
+            const isBuild = timeline[i] > timeline[i-1] + 0.1;
+            
+            if (isPeak || isDrop || isBuild) {
+                moments.push({
+                    index: i,
+                    time: (i / timeline.length) * duration,
+                    type: isPeak ? 'peak' : isDrop ? 'drop' : 'build'
+                });
+            }
+        }
+
+        if (moments.length > index) {
+            return formatTime(moments[index].time) + ` (${moments[index].type})`;
+        }
+
+        return formatTime(duration * ((index + 1) / 7));
+    }
+
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Determine primary mood for display
+    function getPrimaryMood(moods) {
+        const moodLabels = {
+            energy: 'Energetic',
+            happiness: 'Uplifting',
+            danceability: 'Groovy',
+            aggression: 'Intense',
+            darkness: 'Dark'
+        };
+
+        let maxMood = 'energy';
+        let maxValue = 0;
+
+        for (const [mood, value] of Object.entries(moods)) {
+            if (value > maxValue) {
+                maxValue = value;
+                maxMood = mood;
+            }
+        }
+
+        return moodLabels[maxMood] || 'Balanced';
+    }    // ============================================
+    // DISPLAY & RENDERING SYSTEM
+    // ============================================
+
+    function displayResults() {
+        // Hide upload zone, show results
+        elements.uploadCard.style.display = 'none';
+        elements.dnaResults.classList.add('active');
+
+        const track = state.currentTrack;
+        const analysis = state.analysisData;
+
+        // Update track info header
+        document.getElementById('trackName').textContent = track.name;
+        document.getElementById('trackMeta').textContent = 
+            `${formatDuration(track.duration)} • ${formatFileSize(track.size)} • ${track.type.split('/')[1].toUpperCase()}`;
+
+        // Update DNA stats
+        document.getElementById('bpmValue').textContent = analysis.bpm;
+        document.getElementById('keyValue').textContent = analysis.key;
+        document.getElementById('genreValue').textContent = analysis.genre;
+        document.getElementById('moodValue').textContent = getPrimaryMood(analysis.moods);
+
+        // Animate mood bars
+        setTimeout(() => {
+            animateMoodBar('energy', analysis.moods.energy);
+            animateMoodBar('happiness', analysis.moods.happiness);
+            animateMoodBar('danceability', analysis.moods.danceability);
+            animateMoodBar('aggression', analysis.moods.aggression);
+            animateMoodBar('darkness', analysis.moods.darkness);
+        }, 300);
+
+        // Draw visualizations
+        drawWaveform();
+        drawEnergyTimeline();
+
+        // Populate scenes
+        populateScenes(analysis.scenes);
+
+        // Update proof section
+        updateProofSection();
+
+        // Reset progress
+        elements.progressContainer.classList.remove('active');
+        elements.progressFill.style.width = '0%';
+    }
+
+    // ============================================
+    // MOOD BAR ANIMATION
+    // ============================================
+    function animateMoodBar(mood, value) {
+        const fill = document.getElementById(mood + 'Fill');
+        const valueDisplay = document.getElementById(mood + 'Value');
+        
+        if (fill && valueDisplay) {
+            // Animate the fill
+            fill.style.transition = 'width 1s ease-out';
+            fill.style.width = value + '%';
+            
+            // Animate the number
+            animateNumber(valueDisplay, 0, value, 1000);
+        }
+    }
+
+    function animateNumber(element, start, end, duration) {
+        const startTime = performance.now();
+        
+        function update(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing function
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(start + (end - start) * easeOut);
+            
+            element.textContent = current + '%';
+            
+            if (progress < 1) {
+                requestAnimationFrame(update);
+            }
+        }
+        
+        requestAnimationFrame(update);
+    }
+
+    // ============================================
+    // WAVEFORM VISUALIZATION
+    // ============================================
+    function drawWaveform() {
+        const canvas = document.getElementById('waveformCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size for high DPI
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+
+        const width = rect.width;
+        const height = rect.height;
+        const audioData = state.audioBuffer.getChannelData(0);
+
+        // Clear canvas
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+
+        // Calculate samples per pixel
+        const samplesPerPixel = Math.floor(audioData.length / width);
+        const centerY = height / 2;
+
+        // Create gradient for waveform
+        const gradient = ctx.createLinearGradient(0, 0, width, 0);
+        gradient.addColorStop(0, '#e84d8a');
+        gradient.addColorStop(0.5, '#a855f7');
+        gradient.addColorStop(1, '#06b6d4');
+
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.8;
+
+        // Draw waveform bars
+        const barWidth = 2;
+        const barGap = 1;
+        const totalBarWidth = barWidth + barGap;
+        const numBars = Math.floor(width / totalBarWidth);
+        const samplesPerBar = Math.floor(audioData.length / numBars);
+
+        for (let i = 0; i < numBars; i++) {
+            const startSample = i * samplesPerBar;
+            const endSample = Math.min(startSample + samplesPerBar, audioData.length);
+            
+            // Find min and max in this range
+            let min = 0;
+            let max = 0;
+            
+            for (let j = startSample; j < endSample; j++) {
+                const sample = audioData[j];
+                if (sample < min) min = sample;
+                if (sample > max) max = sample;
+            }
+
+            const x = i * totalBarWidth;
+            const barHeight = Math.max(2, (max - min) * centerY * 0.9);
+            const y = centerY - barHeight / 2;
+
+            // Create individual bar gradient
+            const barGradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+            barGradient.addColorStop(0, 'rgba(232, 77, 138, 0.8)');
+            barGradient.addColorStop(0.5, 'rgba(168, 85, 247, 1)');
+            barGradient.addColorStop(1, 'rgba(232, 77, 138, 0.8)');
+
+            ctx.fillStyle = barGradient;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+
+        // Draw center line
+        ctx.globalAlpha = 0.3;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(width, centerY);
+        ctx.stroke();
+
+        // Add time markers
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+
+        const duration = state.currentTrack.duration;
+        const markers = [0, 0.25, 0.5, 0.75, 1];
+        
+        markers.forEach(marker => {
+            const x = marker * width;
+            const time = formatDuration(duration * marker);
+            
+            // Draw tick
+            ctx.beginPath();
+            ctx.moveTo(x, height - 15);
+            ctx.lineTo(x, height - 10);
+            ctx.stroke();
+            
+            // Draw time
+            ctx.fillText(time, x, height - 3);
+        });
+
+        ctx.globalAlpha = 1;
+    }
+
+    // ============================================
+    // ENERGY TIMELINE VISUALIZATION
+    // ============================================
+    function drawEnergyTimeline() {
+        const canvas = document.getElementById('energyCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size for high DPI
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+
+        const width = rect.width;
+        const height = rect.height;
+        const timeline = state.analysisData.energyTimeline;
+
+        if (!timeline || timeline.length === 0) return;
+
+        // Clear canvas
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(0, 0, width, height);
+
+        // Create gradient fill
+        const gradient = ctx.createLinearGradient(0, height, 0, 0);
+        gradient.addColorStop(0, 'rgba(249, 115, 22, 0)');
+        gradient.addColorStop(0.5, 'rgba(249, 115, 22, 0.3)');
+        gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)');
+
+        // Draw filled area
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+
+        const pointWidth = width / (timeline.length - 1);
+
+        timeline.forEach((energy, index) => {
+            const x = index * pointWidth;
+            const y = height - (energy * height * 0.85) - 5;
+            
+            if (index === 0) {
+                ctx.lineTo(x, y);
+            } else {
+                // Smooth curve
+                const prevX = (index - 1) * pointWidth;
+                const cpX = (prevX + x) / 2;
+                const prevY = height - (timeline[index - 1] * height * 0.85) - 5;
+                ctx.quadraticCurveTo(prevX + pointWidth / 2, prevY, x, y);
+            }
+        });
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Draw line on top
+        const lineGradient = ctx.createLinearGradient(0, 0, width, 0);
+        lineGradient.addColorStop(0, '#f97316');
+        lineGradient.addColorStop(0.5, '#ef4444');
+        lineGradient.addColorStop(1, '#f97316');
+
+        ctx.beginPath();
+        ctx.strokeStyle = lineGradient;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        timeline.forEach((energy, index) => {
+            const x = index * pointWidth;
+            const y = height - (energy * height * 0.85) - 5;
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                const prevX = (index - 1) * pointWidth;
+                const prevY = height - (timeline[index - 1] * height * 0.85) - 5;
+                ctx.quadraticCurveTo(prevX + pointWidth / 2, prevY, x, y);
+            }
+        });
+
+        ctx.stroke();
+
+        // Mark high energy moments
+        ctx.fillStyle = '#ef4444';
+        timeline.forEach((energy, index) => {
+            if (energy > 0.8) {
+                const x = index * pointWidth;
+                const y = height - (energy * height * 0.85) - 5;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+
+        // Add labels
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('HIGH', 5, 12);
+        ctx.fillText('LOW', 5, height - 5);
+    }
+
+    // ============================================
+    // SCENE CARDS POPULATION
+    // ============================================
+    function populateScenes(scenes) {
+        const grid = document.getElementById('sceneGrid');
+        grid.innerHTML = '';
+
+        if (!scenes || scenes.length === 0) {
+            grid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                    No scene suggestions available for this track.
+                </div>
+            `;
+            return;
+        }
+
+        scenes.forEach((scene, index) => {
+            const card = document.createElement('div');
+            card.className = 'scene-card';
+            card.style.animationDelay = `${index * 0.1}s`;
+            
+            // Color code by type
+            const typeColors = {
+                'Film': '#e84d8a',
+                'TV Series': '#a855f7',
+                'Commercial': '#22c55e',
+                'Gaming': '#3b82f6',
+                'Gaming Trailer': '#3b82f6',
+                'Sports': '#f97316',
+                'Social Media': '#06b6d4',
+                'Social': '#06b6d4'
+            };
+            
+            const typeColor = typeColors[scene.type] || '#a855f7';
+            
+            card.innerHTML = `
+                <div class="scene-type" style="background: ${typeColor}22; color: ${typeColor};">${scene.type}</div>
+                <div class="scene-title">${scene.title}</div>
+                <div class="scene-description">${scene.description}</div>
+                ${scene.timestamp ? `<div class="scene-timestamp">⏱️ Best sync point: ${scene.timestamp}</div>` : ''}
+                <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 11px; color: var(--text-muted);">Match confidence</span>
+                    <span style="font-size: 13px; font-weight: 700; color: ${typeColor};">${scene.fit}%</span>
+                </div>
+            `;
+            
+            grid.appendChild(card);
+        });
+    }
+
+    // ============================================
+    // PROOF OF CREATION SECTION
+    // ============================================
+    function updateProofSection() {
+        const track = state.currentTrack;
+        
+        document.getElementById('proofHash').textContent = `SHA-256: ${track.hash}`;
+        document.getElementById('proofTimestamp').textContent = 
+            `Registered: ${new Date(track.timestamp).toLocaleString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZoneName: 'short'
+            })}`;
+    }
+
+    // ============================================
+    // UTILITY FUNCTIONS
+    // ============================================
+    function formatDuration(seconds) {
+        if (!seconds || isNaN(seconds)) return '0:00';
+        
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function formatFileSize(bytes) {
+        if (!bytes) return '0 B';
+        
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let unitIndex = 0;
+        let size = bytes;
+        
+        while (size >= 1024 && unitIndex < units.length - 1) {
+            size /= 1024;
+            unitIndex++;
+        }
+        
+        return `${size.toFixed(1)} ${units[unitIndex]}`;
+    }
+
+    // ============================================
+    // AUDIO PLAYBACK CONTROLS
+    // ============================================
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const audioPlayer = document.getElementById('audioPlayer');
+
+    playPauseBtn.addEventListener('click', () => {
+        if (state.isPlaying) {
+            audioPlayer.pause();
+            playPauseBtn.textContent = '▶️ Play';
+            state.isPlaying = false;
+        } else {
+            audioPlayer.play();
+            playPauseBtn.textContent = '⏸️ Pause';
+            state.isPlaying = true;
+        }
+    });
+
+    audioPlayer.addEventListener('ended', () => {
+        playPauseBtn.textContent = '▶️ Play';
+        state.isPlaying = false;
+    });
+
+    // ============================================
+    // NEW TRACK BUTTON
+    // ============================================
+    document.getElementById('newTrackBtn').addEventListener('click', () => {
+        resetUpload();
+    });
+
+    function resetUpload() {
+        // Stop audio
+        audioPlayer.pause();
+        audioPlayer.src = '';
+        state.isPlaying = false;
+        playPauseBtn.textContent = '▶️ Play';
+
+        // Reset state
+        state.currentTrack = null;
+        state.audioBuffer = null;
+        state.analysisData = null;
+
+        // Reset UI
+        elements.dnaResults.classList.remove('active');
+        elements.uploadCard.style.display = 'block';
+        elements.progressContainer.classList.remove('active');
+        elements.progressFill.style.width = '0%';
+        elements.audioFileInput.value = '';
+
+        // Reset results tab to DNA
+        document.querySelectorAll('.results-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.results-tab[data-panel="dna"]').classList.add('active');
+        document.querySelectorAll('.results-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById('dnaPanel').classList.add('active');
+    }
+
+    // ============================================
+    // LIBRARY MANAGEMENT
+    // ============================================
+    function saveToLibrary() {
+        const track = state.currentTrack;
+        
+        // Check if track already exists (by hash)
+        const existingIndex = state.library.findIndex(t => t.hash === track.hash);
+        
+        if (existingIndex >= 0) {
+            // Update existing
+            state.library[existingIndex] = track;
+        } else {
+            // Add new
+            state.library.unshift(track);
+        }
+
+        // Keep only last 50 tracks
+        if (state.library.length > 50) {
+            state.library = state.library.slice(0, 50);
+        }
+
+        // Save to localStorage
+        localStorage.setItem('orbitLibrary', JSON.stringify(state.library));
+    }
+
+    function renderLibrary() {
+        const container = document.getElementById('libraryList');
+        
+        if (state.library.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                    <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
+                    <div style="font-size: 16px; margin-bottom: 8px;">No tracks in your library yet</div>
+                    <div style="font-size: 13px;">Go to Analyze to add your first track</div>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = state.library.map((track, index) => `
+            <div class="library-item" style="
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                padding: 16px;
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px solid var(--border-color);
+                border-radius: 12px;
+                margin-bottom: 12px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            " onmouseover="this.style.borderColor='var(--accent-purple)'" onmouseout="this.style.borderColor='var(--border-color)'" onclick="loadFromLibrary(${index})">
+                <div style="
+                    width: 48px;
+                    height: 48px;
+                    background: var(--gradient-primary);
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 20px;
+                    flex-shrink: 0;
+                ">🎵</div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${track.name}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">
+                        ${track.analysis ? `${track.analysis.bpm} BPM • ${track.analysis.key} • ${track.analysis.genre}` : 'Analysis pending'}
+                    </div>
+                </div>
+                <div style="text-align: right; flex-shrink: 0;">
+                    <div style="font-size: 13px; color: var(--text-muted);">
+                        ${formatDuration(track.duration)}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
+                        ${new Date(track.timestamp).toLocaleDateString()}
+                    </div>
+                </div>
+                <button onclick="event.stopPropagation(); deleteFromLibrary(${index})" style="
+                    background: none;
+                    border: none;
+                    color: var(--text-muted);
+                    cursor: pointer;
+                    padding: 8px;
+                    border-radius: 8px;
+                    transition: all 0.2s ease;
+                " onmouseover="this.style.background='rgba(239,68,68,0.1)'; this.style.color='#ef4444'" onmouseout="this.style.background='none'; this.style.color='var(--text-muted)'">
+                    🗑️
+                </button>
+            </div>
+        `).join('');
+    }
+
+    // Global functions for library interaction
+    window.loadFromLibrary = function(index) {
+        const track = state.library[index];
+        
+        if (!track || !track.analysis) {
+            alert('This track needs to be re-analyzed. Please upload it again.');
+            return;
+        }
+
+        // Load track data
+        state.currentTrack = track;
+        state.analysisData = track.analysis;
+
+        // Switch to analyze section
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.querySelector('.nav-link[data-section="analyze"]').classList.add('active');
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.getElementById('analyzeSection').classList.add('active');
+
+        // Display results (without waveform since we don't have audio buffer)
+        elements.uploadCard.style.display = 'none';
+        elements.dnaResults.classList.add('active');
+
+        // Update track info
+        document.getElementById('trackName').textContent = track.name;
+        document.getElementById('trackMeta').textContent = 
+            `${formatDuration(track.duration)} • Loaded from library`;
+
+        // Update DNA stats
+        document.getElementById('bpmValue').textContent = track.analysis.bpm;
+        document.getElementById('keyValue').textContent = track.analysis.key;
+        document.getElementById('genreValue').textContent = track.analysis.genre;
+        document.getElementById('moodValue').textContent = getPrimaryMood(track.analysis.moods);
+
+        // Animate mood bars
+        setTimeout(() => {
+            animateMoodBar('energy', track.analysis.moods.energy);
+            animateMoodBar('happiness', track.analysis.moods.happiness);
+            animateMoodBar('danceability', track.analysis.moods.danceability);
+            animateMoodBar('aggression', track.analysis.moods.aggression);
+            animateMoodBar('darkness', track.analysis.moods.darkness);
+        }, 100);
+
+        // Draw energy timeline if available
+        if (track.analysis.energyTimeline) {
+            drawEnergyTimelineFromData(track.analysis.energyTimeline);
+        }
+
+        // Populate scenes
+        populateScenes(track.analysis.scenes);
+
+        // Update proof section
+        updateProofSection();
+
+        // Disable play button (no audio loaded)
+        playPauseBtn.disabled = true;
+        playPauseBtn.style.opacity = '0.5';
+        playPauseBtn.textContent = '▶️ No Audio';
+    };
+
+    window.deleteFromLibrary = function(index) {
+        if (confirm('Delete this track from your library?')) {
+            state.library.splice(index, 1);
+            localStorage.setItem('orbitLibrary', JSON.stringify(state.library));
+            renderLibrary();
+        }
+    };
+
+    function drawEnergyTimelineFromData(timeline) {
+        const canvas = document.getElementById('energyCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+        
+        canvas.style.width = rect.width + 'px';
+        canvas.style.height = rect.height + 'px';
+
+        const width = rect.width;
+        const height = rect.height;
+
+        // Clear
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(0, 0, width, height);
+
+        // Same drawing logic as before
+        const gradient = ctx.createLinearGradient(0, height, 0, 0);
+        gradient.addColorStop(0, 'rgba(249, 115, 22, 0)');
+        gradient.addColorStop(0.5, 'rgba(249, 115, 22, 0.3)');
+        gradient.addColorStop(1, 'rgba(239, 68, 68, 0.6)');
+
+        ctx.beginPath();
+        ctx.moveTo(0, height);
+
+        const pointWidth = width / (timeline.length - 1);
+
+        timeline.forEach((energy, index) => {
+            const x = index * pointWidth;
+            const y = height - (energy * height * 0.85) - 5;
+            
+            if (index === 0) {
+                ctx.lineTo(x, y);
+            } else {
+                const prevX = (index - 1) * pointWidth;
+                const prevY = height - (timeline[index - 1] * height * 0.85) - 5;
+                ctx.quadraticCurveTo(prevX + pointWidth / 2, prevY, x, y);
+            }
+        });
+
+        ctx.lineTo(width, height);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Line
+        const lineGradient = ctx.createLinearGradient(0, 0, width, 0);
+        lineGradient.addColorStop(0, '#f97316');
+        lineGradient.addColorStop(0.5, '#ef4444');
+        lineGradient.addColorStop(1, '#f97316');
+
+        ctx.beginPath();
+        ctx.strokeStyle = lineGradient;
+        ctx.lineWidth = 2;
+
+        timeline.forEach((energy, index) => {
+            const x = index * pointWidth;
+            const y = height - (energy * height * 0.85) - 5;
+            
+            if (index === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                const prevX = (index - 1) * pointWidth;
+                const prevY = height - (timeline[index - 1] * height * 0.85) - 5;
+                ctx.quadraticCurveTo(prevX + pointWidth / 2, prevY, x, y);
+            }
+        });
+
+        ctx.stroke();
+    }
+
+    // ============================================
+    // WAVEFORM CANVAS - PLACEHOLDER WHEN NO AUDIO
+    // ============================================
+    function drawPlaceholderWaveform() {
+        const canvas = document.getElementById('waveformCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        ctx.scale(dpr, dpr);
+
+        const width = rect.width;
+        const height = rect.height;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.font = '14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Waveform not available (loaded from library)', width / 2, height / 2);
+    }
+
+    // ============================================
+    // RESPONSIVE CANVAS REDRAW
+    // ============================================
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            if (state.audioBuffer) {
+                drawWaveform();
+                drawEnergyTimeline();
+            } else if (state.analysisData && state.analysisData.energyTimeline) {
+                drawPlaceholderWaveform();
+                drawEnergyTimelineFromData(state.analysisData.energyTimeline);
+            }
+        }, 250);
+    });    // ============================================
+    // PDF CERTIFICATE GENERATION
+    // ============================================
+    document.getElementById('downloadCertificateBtn').addEventListener('click', generatePDFCertificate);
+
+    async function generatePDFCertificate() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const track = state.currentTrack;
+        const analysis = state.analysisData;
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 20;
+        const centerX = pageWidth / 2;
+
+        // Background
+        doc.setFillColor(10, 10, 11);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Header gradient bar
+        doc.setFillColor(232, 77, 138);
+        doc.rect(0, 0, pageWidth, 3, 'F');
+
+        // Logo/Brand
+        doc.setFillColor(232, 77, 138);
+        doc.roundedRect(margin, 15, 12, 12, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RS', margin + 6, 23, { align: 'center' });
+
+        doc.setFontSize(14);
+        doc.setTextColor(255, 255, 255);
+        doc.text('ORBIT', margin + 16, 20);
+        doc.setFontSize(9);
+        doc.setTextColor(160, 160, 168);
+        doc.text('by RapperStore', margin + 16, 25);
+
+        // Certificate title
+        doc.setFontSize(28);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Certificate of Creation', centerX, 55, { align: 'center' });
+
+        // Decorative line
+        doc.setDrawColor(168, 85, 247);
+        doc.setLineWidth(0.5);
+        doc.line(margin + 30, 62, pageWidth - margin - 30, 62);
+
+        // Main content box
+        doc.setFillColor(22, 22, 26);
+        doc.setDrawColor(42, 42, 50);
+        doc.roundedRect(margin, 75, pageWidth - (margin * 2), 120, 3, 3, 'FD');
+
+        // Track name
+        doc.setFontSize(11);
+        doc.setTextColor(160, 160, 168);
+        doc.setFont('helvetica', 'normal');
+        doc.text('TRACK TITLE', centerX, 88, { align: 'center' });
+        
+        doc.setFontSize(20);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        
+        // Truncate long names
+        let trackName = track.name;
+        if (trackName.length > 35) {
+            trackName = trackName.substring(0, 32) + '...';
+        }
+        doc.text(trackName, centerX, 100, { align: 'center' });
+
+        // Audio fingerprint
+        doc.setFontSize(9);
+        doc.setTextColor(160, 160, 168);
+        doc.setFont('helvetica', 'normal');
+        doc.text('SHA-256 AUDIO FINGERPRINT', centerX, 118, { align: 'center' });
+
+        doc.setFontSize(7);
+        doc.setTextColor(6, 182, 212);
+        doc.setFont('courier', 'normal');
+        
+        // Split hash into two lines for readability
+        const hash = track.hash;
+        const hashLine1 = hash.substring(0, 32);
+        const hashLine2 = hash.substring(32);
+        doc.text(hashLine1, centerX, 126, { align: 'center' });
+        doc.text(hashLine2, centerX, 131, { align: 'center' });
+
+        // Registration timestamp
+        doc.setFontSize(9);
+        doc.setTextColor(160, 160, 168);
+        doc.setFont('helvetica', 'normal');
+        doc.text('REGISTRATION TIMESTAMP', centerX, 148, { align: 'center' });
+
+        doc.setFontSize(11);
+        doc.setTextColor(255, 255, 255);
+        const timestamp = new Date(track.timestamp).toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+        });
+        doc.text(timestamp, centerX, 157, { align: 'center' });
+
+        // Duration and file info
+        doc.setFontSize(9);
+        doc.setTextColor(160, 160, 168);
+        doc.text('TRACK DETAILS', centerX, 175, { align: 'center' });
+
+        doc.setFontSize(10);
+        doc.setTextColor(255, 255, 255);
+        const details = `Duration: ${formatDuration(track.duration)} | Size: ${formatFileSize(track.size)} | Sample Rate: ${track.sampleRate}Hz`;
+        doc.text(details, centerX, 184, { align: 'center' });
+
+        // Analysis summary box
+        doc.setFillColor(22, 22, 26);
+        doc.setDrawColor(42, 42, 50);
+        doc.roundedRect(margin, 205, pageWidth - (margin * 2), 50, 3, 3, 'FD');
+
+        doc.setFontSize(11);
+        doc.setTextColor(160, 160, 168);
+        doc.text('AUDIO DNA ANALYSIS', centerX, 218, { align: 'center' });
+
+        // Analysis stats in a row
+        const statsY = 235;
+        const statSpacing = (pageWidth - (margin * 2)) / 4;
+        
+        const stats = [
+            { label: 'BPM', value: analysis.bpm.toString() },
+            { label: 'KEY', value: analysis.key },
+            { label: 'GENRE', value: analysis.genre },
+            { label: 'MOOD', value: getPrimaryMood(analysis.moods) }
+        ];
+
+        stats.forEach((stat, index) => {
+            const x = margin + (statSpacing * index) + (statSpacing / 2);
+            
+            doc.setFontSize(16);
+            doc.setTextColor(232, 77, 138);
+            doc.setFont('helvetica', 'bold');
+            doc.text(stat.value, x, statsY, { align: 'center' });
+            
+            doc.setFontSize(8);
+            doc.setTextColor(160, 160, 168);
+            doc.setFont('helvetica', 'normal');
+            doc.text(stat.label, x, statsY + 7, { align: 'center' });
+        });
+
+        // Footer
+        doc.setFontSize(8);
+        doc.setTextColor(90, 90, 101);
+        doc.text('This certificate verifies that the above audio file was registered in ORBIT by RapperStore.', centerX, pageHeight - 25, { align: 'center' });
+        doc.text('The SHA-256 hash serves as a unique fingerprint that can be used to verify the original file.', centerX, pageHeight - 20, { align: 'center' });
+        
+        doc.setTextColor(168, 85, 247);
+        doc.text('rapperstore.com/orbit', centerX, pageHeight - 12, { align: 'center' });
+
+        // Save
+        const fileName = `ORBIT_Certificate_${track.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+        doc.save(fileName);
+    }
+
+    // ============================================
+    // COPY HASH FUNCTIONALITY
+    // ============================================
+    document.getElementById('copyHashBtn').addEventListener('click', async () => {
+        const hash = state.currentTrack.hash;
+        
+        try {
+            await navigator.clipboard.writeText(hash);
+            
+            const btn = document.getElementById('copyHashBtn');
+            const originalText = btn.textContent;
+            btn.textContent = '✓ Copied!';
+            btn.style.background = 'rgba(34, 197, 94, 0.2)';
+            btn.style.borderColor = '#22c55e';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = '';
+                btn.style.borderColor = '';
+            }, 2000);
+        } catch (err) {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = hash;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            alert('Hash copied to clipboard!');
+        }
+    });
+
+    // ============================================
+    // EXPORT PANEL - JSON
+    // ============================================
+    document.getElementById('exportJSON').addEventListener('click', () => {
+        const track = state.currentTrack;
+        const analysis = state.analysisData;
+        
+        const exportData = {
+            orbit_version: '1.0',
+            export_date: new Date().toISOString(),
+            track: {
+                name: track.name,
+                duration: track.duration,
+                duration_formatted: formatDuration(track.duration),
+                file_size: track.size,
+                file_size_formatted: formatFileSize(track.size),
+                sample_rate: track.sampleRate,
+                hash: track.hash,
+                registration_timestamp: track.timestamp
+            },
+            analysis: {
+                bpm: analysis.bpm,
+                key: analysis.key,
+                genre: analysis.genre,
+                primary_mood: getPrimaryMood(analysis.moods),
+                moods: {
+                    energy: analysis.moods.energy,
+                    happiness: analysis.moods.happiness,
+                    danceability: analysis.moods.danceability,
+                    aggression: analysis.moods.aggression,
+                    darkness: analysis.moods.darkness
+                },
+                energy_timeline: analysis.energyTimeline,
+                raw_features: {
+                    rms_energy: analysis.energy,
+                    spectral_centroid: analysis.spectralCentroid,
+                    zero_crossing_rate: analysis.zeroCrossingRate
+                }
+            },
+            sync_suggestions: analysis.scenes.map(scene => ({
+                type: scene.type,
+                title: scene.title,
+                description: scene.description,
+                timestamp: scene.timestamp,
+                confidence: scene.fit
+            }))
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        downloadBlob(blob, `ORBIT_DNA_${track.name.replace(/[^a-z0-9]/gi, '_')}.json`);
+        
+        showExportSuccess('JSON');
+    });
+
+    // ============================================
+    // EXPORT PANEL - CSV
+    // ============================================
+    document.getElementById('exportCSV').addEventListener('click', () => {
+        const track = state.currentTrack;
+        const analysis = state.analysisData;
+        
+        // Create CSV content
+        const rows = [
+            ['ORBIT Audio DNA Analysis'],
+            ['Export Date', new Date().toISOString()],
+            [''],
+            ['TRACK INFORMATION'],
+            ['Name', track.name],
+            ['Duration', formatDuration(track.duration)],
+            ['File Size', formatFileSize(track.size)],
+            ['Sample Rate', track.sampleRate + ' Hz'],
+            ['SHA-256 Hash', track.hash],
+            ['Registration Date', track.timestamp],
+            [''],
+            ['ANALYSIS RESULTS'],
+            ['BPM', analysis.bpm],
+            ['Key', analysis.key],
+            ['Genre', analysis.genre],
+            ['Primary Mood', getPrimaryMood(analysis.moods)],
+            [''],
+            ['MOOD BREAKDOWN'],
+            ['Energy', analysis.moods.energy + '%'],
+            ['Happiness', analysis.moods.happiness + '%'],
+            ['Danceability', analysis.moods.danceability + '%'],
+            ['Aggression', analysis.moods.aggression + '%'],
+            ['Darkness', analysis.moods.darkness + '%'],
+            [''],
+            ['SYNC SCENE SUGGESTIONS'],
+            ['Type', 'Title', 'Description', 'Timestamp', 'Confidence']
+        ];
+
+        // Add scenes
+        analysis.scenes.forEach(scene => {
+            rows.push([
+                scene.type,
+                scene.title,
+                `"${scene.description.replace(/"/g, '""')}"`,
+                scene.timestamp || 'N/A',
+                scene.fit + '%'
+            ]);
+        });
+
+        // Add energy timeline
+        rows.push(['']);
+        rows.push(['ENERGY TIMELINE (normalized 0-1)']);
+        rows.push(['Time Index', 'Energy Level']);
+        
+        analysis.energyTimeline.forEach((energy, index) => {
+            const timeSeconds = (index / analysis.energyTimeline.length) * track.duration;
+            rows.push([formatDuration(timeSeconds), energy.toFixed(4)]);
+        });
+
+        const csvContent = rows.map(row => row.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        downloadBlob(blob, `ORBIT_DNA_${track.name.replace(/[^a-z0-9]/gi, '_')}.csv`);
+        
+        showExportSuccess('CSV');
+    });
+
+    // ============================================
+    // EXPORT PANEL - PDF REPORT
+    // ============================================
+    document.getElementById('exportPDF').addEventListener('click', generateFullPDFReport);
+
+    async function generateFullPDFReport() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        const track = state.currentTrack;
+        const analysis = state.analysisData;
+        
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 15;
+        const centerX = pageWidth / 2;
+        let y = 20;
+
+        // Helper function for new page
+        function checkNewPage(neededSpace) {
+            if (y + neededSpace > pageHeight - 20) {
+                doc.addPage();
+                y = 20;
+                return true;
+            }
+            return false;
+        }
+
+        // === PAGE 1: COVER ===
+        
+        // Background
+        doc.setFillColor(10, 10, 11);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Header bar
+        doc.setFillColor(232, 77, 138);
+        doc.rect(0, 0, pageWidth, 4, 'F');
+
+        // Logo
+        doc.setFillColor(232, 77, 138);
+        doc.roundedRect(margin, 15, 14, 14, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text('RS', margin + 7, 24, { align: 'center' });
+
+        doc.setFontSize(16);
+        doc.text('ORBIT', margin + 18, 21);
+        doc.setFontSize(10);
+        doc.setTextColor(160, 160, 168);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Audio DNA Analysis Report', margin + 18, 27);
+
+        // Title
+        y = 60;
+        doc.setFontSize(32);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        
+        let displayName = track.name;
+        if (displayName.length > 25) {
+            displayName = displayName.substring(0, 22) + '...';
+        }
+        doc.text(displayName, centerX, y, { align: 'center' });
+
+        // Subtitle
+        y += 12;
+        doc.setFontSize(12);
+        doc.setTextColor(168, 85, 247);
+        doc.text('Complete Audio Intelligence Report', centerX, y, { align: 'center' });
+
+        // Main stats box
+        y += 25;
+        doc.setFillColor(22, 22, 26);
+        doc.setDrawColor(42, 42, 50);
+        doc.roundedRect(margin, y, pageWidth - (margin * 2), 45, 3, 3, 'FD');
+
+        // Stats grid
+        const statsStartY = y + 15;
+        const statWidth = (pageWidth - (margin * 2)) / 4;
+        
+        const mainStats = [
+            { label: 'BPM', value: analysis.bpm.toString(), color: [232, 77, 138] },
+            { label: 'KEY', value: analysis.key, color: [168, 85, 247] },
+            { label: 'GENRE', value: analysis.genre, color: [34, 197, 94] },
+            { label: 'MOOD', value: getPrimaryMood(analysis.moods), color: [6, 182, 212] }
+        ];
+
+        mainStats.forEach((stat, index) => {
+            const x = margin + (statWidth * index) + (statWidth / 2);
+            
+            doc.setFontSize(22);
+            doc.setTextColor(...stat.color);
+            doc.setFont('helvetica', 'bold');
+            doc.text(stat.value, x, statsStartY + 8, { align: 'center' });
+            
+            doc.setFontSize(9);
+            doc.setTextColor(160, 160, 168);
+            doc.setFont('helvetica', 'normal');
+            doc.text(stat.label, x, statsStartY + 18, { align: 'center' });
+        });
+
+        // Mood bars section
+        y += 60;
+        doc.setFontSize(14);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Mood Analysis', margin, y);
+
+        y += 10;
+        const moodData = [
+            { name: 'Energy', value: analysis.moods.energy, color: [249, 115, 22] },
+            { name: 'Happiness', value: analysis.moods.happiness, color: [34, 197, 94] },
+            { name: 'Danceability', value: analysis.moods.danceability, color: [168, 85, 247] },
+            { name: 'Aggression', value: analysis.moods.aggression, color: [239, 68, 68] },
+            { name: 'Darkness', value: analysis.moods.darkness, color: [99, 102, 241] }
+        ];
+
+        moodData.forEach(mood => {
+            // Label
+            doc.setFontSize(10);
+            doc.setTextColor(160, 160, 168);
+            doc.setFont('helvetica', 'normal');
+            doc.text(mood.name, margin, y + 4);
+
+            // Background bar
+            doc.setFillColor(30, 30, 35);
+            doc.roundedRect(margin + 35, y, 110, 6, 1, 1, 'F');
+
+            // Fill bar
+            doc.setFillColor(...mood.color);
+            const fillWidth = (mood.value / 100) * 110;
+            if (fillWidth > 0) {
+                doc.roundedRect(margin + 35, y, fillWidth, 6, 1, 1, 'F');
+            }
+
+            // Value
+            doc.setFontSize(10);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text(mood.value + '%', margin + 150, y + 4);
+
+            y += 12;
+        });
+
+        // Track details
+        y += 10;
+        doc.setFillColor(22, 22, 26);
+        doc.setDrawColor(42, 42, 50);
+        doc.roundedRect(margin, y, pageWidth - (margin * 2), 35, 3, 3, 'FD');
+
+        y += 10;
+        doc.setFontSize(10);
+        doc.setTextColor(160, 160, 168);
+        doc.setFont('helvetica', 'normal');
+
+        const detailsCol1X = margin + 5;
+        const detailsCol2X = centerX + 5;
+
+        doc.text('Duration:', detailsCol1X, y);
+        doc.setTextColor(255, 255, 255);
+        doc.text(formatDuration(track.duration), detailsCol1X + 25, y);
+
+        doc.setTextColor(160, 160, 168);
+        doc.text('File Size:', detailsCol2X, y);
+        doc.setTextColor(255, 255, 255);
+        doc.text(formatFileSize(track.size), detailsCol2X + 22, y);
+
+        y += 8;
+        doc.setTextColor(160, 160, 168);
+        doc.text('Sample Rate:', detailsCol1X, y);
+        doc.setTextColor(255, 255, 255);
+        doc.text(track.sampleRate + ' Hz', detailsCol1X + 30, y);
+
+        doc.setTextColor(160, 160, 168);
+        doc.text('Analyzed:', detailsCol2X, y);
+        doc.setTextColor(255, 255, 255);
+        doc.text(new Date(track.timestamp).toLocaleDateString(), detailsCol2X + 22, y);
+
+        y += 12;
+        doc.setFontSize(8);
+        doc.setTextColor(6, 182, 212);
+        doc.text('SHA-256: ' + track.hash.substring(0, 40) + '...', detailsCol1X, y);
+
+        // === PAGE 2: SYNC SUGGESTIONS ===
+        doc.addPage();
+        
+        // Background
+        doc.setFillColor(10, 10, 11);
+        doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+        // Header
+        doc.setFillColor(232, 77, 138);
+        doc.rect(0, 0, pageWidth, 4, 'F');
+
+        y = 20;
+        doc.setFontSize(18);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Sync Scene Suggestions', margin, y);
+
+        y += 8;
+        doc.setFontSize(10);
+        doc.setTextColor(160, 160, 168);
+        doc.setFont('helvetica', 'normal');
+        doc.text('AI-generated placements based on your track\'s audio DNA', margin, y);
+
+        y += 15;
+
+        // Scene cards
+        analysis.scenes.forEach((scene, index) => {
+            checkNewPage(45);
+
+            // Card background
+            doc.setFillColor(22, 22, 26);
+            doc.setDrawColor(42, 42, 50);
+            doc.roundedRect(margin, y, pageWidth - (margin * 2), 38, 2, 2, 'FD');
+
+            // Type badge
+            const typeColors = {
+                'Film': [232, 77, 138],
+                'TV Series': [168, 85, 247],
+                'Commercial': [34, 197, 94],
+                'Gaming': [59, 130, 246],
+                'Gaming Trailer': [59, 130, 246],
+                'Sports': [249, 115, 22],
+                'Social Media': [6, 182, 212],
+                'Social': [6, 182, 212]
+            };
+            const typeColor = typeColors[scene.type] || [168, 85, 247];
+
+            doc.setFillColor(...typeColor);
+            doc.roundedRect(margin + 5, y + 5, 25, 6, 1, 1, 'F');
+            doc.setFontSize(7);
+            doc.setTextColor(255, 255, 255);
+            doc.setFont('helvetica', 'bold');
+            doc.text(scene.type.toUpperCase().substring(0, 10), margin + 17.5, y + 9, { align: 'center' });
+
+            // Title
+            doc.setFontSize(12);
+            doc.setTextColor(255, 255, 255);
+            doc.text(scene.title, margin + 5, y + 20);
+
+            // Description
+            doc.setFontSize(9);
+            doc.setTextColor(160, 160, 168);
+            doc.setFont('helvetica', 'normal');
+            
+            // Wrap description
+            const maxWidth = pageWidth - (margin * 2) - 50;
+            const descLines = doc.splitTextToSize(scene.description, maxWidth);
+            doc.text(descLines.slice(0, 2), margin + 5, y + 28);
+
+            // Confidence
+            doc.setFontSize(11);
+            doc.setTextColor(...typeColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text(scene.fit + '%', pageWidth - margin - 10, y + 20, { align: 'right' });
+            
+            doc.setFontSize(7);
+            doc.setTextColor(160, 160, 168);
+            doc.setFont('helvetica', 'normal');
+            doc.text('match', pageWidth - margin - 10, y + 26, { align: 'right' });
+
+            y += 43;
+        });
+
+        // Footer on last page
+        doc.setFontSize(8);
+        doc.setTextColor(90, 90, 101);
+        doc.text('Generated by ORBIT by RapperStore | rapperstore.com/orbit', centerX, pageHeight - 10, { align: 'center' });
+
+        // Save
+        const fileName = `ORBIT_Report_${track.name.replace(/[^a-z0-9]/gi, '_')}.pdf`;
+        doc.save(fileName);
+        
+        showExportSuccess('PDF Report');
+    }
+
+    // ============================================
+    // EXPORT PANEL - PNG WAVEFORM
+    // ============================================
+    document.getElementById('exportImage').addEventListener('click', exportWaveformImage);
+
+    function exportWaveformImage() {
+        if (!state.audioBuffer) {
+            alert('Waveform image is only available when audio is loaded. Please upload the track again.');
+            return;
+        }
+
+        // Create high-res canvas
+        const exportCanvas = document.createElement('canvas');
+        const ctx = exportCanvas.getContext('2d');
+        
+        const width = 1920;
+        const height = 400;
+        
+        exportCanvas.width = width;
+        exportCanvas.height = height;
+
+        const audioData = state.audioBuffer.getChannelData(0);
+        const track = state.currentTrack;
+        const analysis = state.analysisData;
+
+        // Background
+        const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+        bgGradient.addColorStop(0, '#0a0a0b');
+        bgGradient.addColorStop(1, '#111113');
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // Add subtle radial gradient
+        const radialGradient = ctx.createRadialGradient(width * 0.3, height * 0.3, 0, width * 0.3, height * 0.3, width * 0.5);
+        radialGradient.addColorStop(0, 'rgba(168, 85, 247, 0.1)');
+        radialGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = radialGradient;
+        ctx.fillRect(0, 0, width, height);
+
+        // Draw waveform
+        const barWidth = 3;
+        const barGap = 1;
+        const totalBarWidth = barWidth + barGap;
+        const numBars = Math.floor(width / totalBarWidth);
+        const samplesPerBar = Math.floor(audioData.length / numBars);
+        const centerY = height / 2;
+        const waveHeight = height * 0.35;
+
+        for (let i = 0; i < numBars; i++) {
+            const startSample = i * samplesPerBar;
+            const endSample = Math.min(startSample + samplesPerBar, audioData.length);
+            
+            let min = 0;
+            let max = 0;
+            
+            for (let j = startSample; j < endSample; j++) {
+                const sample = audioData[j];
+                if (sample < min) min = sample;
+                if (sample > max) max = sample;
+            }
+
+            const x = i * totalBarWidth;
+            const barHeight = Math.max(4, (max - min) * waveHeight);
+            const y = centerY - barHeight / 2;
+
+            // Gradient based on position
+            const progress = i / numBars;
+            const r = Math.round(232 + (6 - 232) * progress);
+            const g = Math.round(77 + (182 - 77) * progress);
+            const b = Math.round(138 + (212 - 138) * progress);
+
+            const barGradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+            barGradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.6)`);
+            barGradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 1)`);
+            barGradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.6)`);
+
+            ctx.fillStyle = barGradient;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        }
+
+        // Center line
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(width, centerY);
+        ctx.stroke();
+
+        // Add track info overlay
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(20, 20, 350, 80);
+        
+        ctx.fillStyle = '#e84d8a';
+        ctx.fillRect(20, 20, 4, 80);
+
+        ctx.font = 'bold 24px Inter, sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(track.name.substring(0, 30), 35, 50);
+
+        ctx.font = '14px Inter, sans-serif';
+        ctx.fillStyle = '#a0a0a8';
+        ctx.fillText(`${analysis.bpm} BPM • ${analysis.key} • ${analysis.genre}`, 35, 72);
+
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = '#5a5a65';
+        ctx.fillText('Generated by ORBIT by RapperStore', 35, 90);
+
+        // Convert to blob and download
+        exportCanvas.toBlob(blob => {
+            downloadBlob(blob, `ORBIT_Waveform_${track.name.replace(/[^a-z0-9]/gi, '_')}.png`);
+            showExportSuccess('Waveform PNG');
+        }, 'image/png');
+    }
+
+    // ============================================
+    // EXPORT UTILITIES
+    // ============================================
+    function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function showExportSuccess(type) {
+        // Find the clicked card and show feedback
+        const cards = document.querySelectorAll('#exportPanel .scene-card');
+        cards.forEach(card => {
+            if (card.querySelector('.scene-title').textContent.includes(type.split(' ')[0])) {
+                const originalBorder = card.style.borderColor;
+                card.style.borderColor = '#22c55e';
+                card.style.boxShadow = '0 0 20px rgba(34, 197, 94, 0.3)';
+                
+                setTimeout(() => {
+                    card.style.borderColor = originalBorder;
+                    card.style.boxShadow = '';
+                }, 1500);
+            }
+        });
+    }
+
+    // ============================================
+    // BPM TAPPER TOOL
+    // ============================================
+    const tapButton = document.getElementById('tapButton');
+    const tappedBPM = document.getElementById('tappedBPM');
+    const resetTapBtn = document.getElementById('resetTapBtn');
+
+    let tapTimes = [];
+    let tapTimeout;
+
+    tapButton.addEventListener('click', () => {
+        const now = Date.now();
+        
+        // Clear old taps if more than 2 seconds since last tap
+        if (tapTimes.length > 0 && now - tapTimes[tapTimes.length - 1] > 2000) {
+            tapTimes = [];
+        }
+        
+        tapTimes.push(now);
+
+        // Need at least 2 taps to calculate BPM
+        if (tapTimes.length >= 2) {
+            const intervals = [];
+            for (let i = 1; i < tapTimes.length; i++) {
+                intervals.push(tapTimes[i] - tapTimes[i - 1]);
+            }
+            
+            // Average interval in milliseconds
+            const avgInterval = intervals.reduce((a, b) => a + b) / intervals.length;
+            
+            // Convert to BPM
+            const bpm = Math.round(60000 / avgInterval);
+            
+            // Display with animation
+            tappedBPM.style.transform = 'scale(1.1)';
+            tappedBPM.textContent = bpm;
+            
+            setTimeout(() => {
+                tappedBPM.style.transform = 'scale(1)';
+            }, 100);
+        }
+
+        // Visual feedback on button
+        tapButton.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            tapButton.style.transform = 'scale(1)';
+        }, 100);
+
+        // Auto-reset after 3 seconds of no tapping
+        clearTimeout(tapTimeout);
+        tapTimeout = setTimeout(() => {
+            // Keep the BPM displayed but allow fresh start on next tap
+        }, 3000);
+    });
+
+    resetTapBtn.addEventListener('click', () => {
+        tapTimes = [];
+        tappedBPM.textContent = '--';
+    });
+
+    // Keyboard support for tapping
+    document.addEventListener('keydown', (e) => {
+        // Only when tools section is active and no input is focused
+        if (document.getElementById('toolsSection').classList.contains('active') &&
+            document.activeElement.tagName !== 'INPUT' &&
+            document.activeElement.tagName !== 'SELECT' &&
+            (e.code === 'Space' || e.code === 'KeyT')) {
+            e.preventDefault();
+            tapButton.click();
+        }
+    });
+
+    // ============================================
+    // KEY FINDER TOOL
+    // ============================================
+    const fromKey = document.getElementById('fromKey');
+    const compatibleKeys = document.getElementById('compatibleKeys');
+
+    // Camelot wheel for harmonic mixing
+    const camelotWheel = {
+        'C': { camelot: '8B', compatible: ['C', 'G', 'F', 'Am', 'Em', 'Dm'] },
+        'C#': { camelot: '3B', compatible: ['C#', 'G#', 'F#', 'A#m', 'Fm', 'D#m'] },
+        'D': { camelot: '10B', compatible: ['D', 'A', 'G', 'Bm', 'F#m', 'Em'] },
+        'D#': { camelot: '5B', compatible: ['D#', 'A#', 'G#', 'Cm', 'Gm', 'Fm'] },
+        'E': { camelot: '12B', compatible: ['E', 'B', 'A', 'C#m', 'G#m', 'F#m'] },
+        'F': { camelot: '7B', compatible: ['F', 'C', 'A#', 'Dm', 'Am', 'Gm'] },
+        'F#': { camelot: '2B', compatible: ['F#', 'C#', 'B', 'D#m', 'A#m', 'G#m'] },
+        'G': { camelot: '9B', compatible: ['G', 'D', 'C', 'Em', 'Bm', 'Am'] },
+        'G#': { camelot: '4B', compatible: ['G#', 'D#', 'C#', 'Fm', 'Cm', 'A#m'] },
+        'A': { camelot: '11B', compatible: ['A', 'E', 'D', 'F#m', 'C#m', 'Bm'] },
+        'A#': { camelot: '6B', compatible: ['A#', 'F', 'D#', 'Gm', 'Dm', 'Cm'] },
+        'B': { camelot: '1B', compatible: ['B', 'F#', 'E', 'G#m', 'D#m', 'C#m'] },
+        'Cm': { camelot: '5A', compatible: ['Cm', 'Gm', 'Fm', 'D#', 'A#', 'G#'] },
+        'C#m': { camelot: '12A', compatible: ['C#m', 'G#m', 'F#m', 'E', 'B', 'A'] },
+        'Dm': { camelot: '7A', compatible: ['Dm', 'Am', 'Gm', 'F', 'C', 'A#'] },
+        'D#m': { camelot: '2A', compatible: ['D#m', 'A#m', 'G#m', 'F#', 'C#', 'B'] },
+        'Em': { camelot: '9A', compatible: ['Em', 'Bm', 'Am', 'G', 'D', 'C'] },
+        'Fm': { camelot: '4A', compatible: ['Fm', 'Cm', 'A#m', 'G#', 'D#', 'C#'] },
+        'F#m': { camelot: '11A', compatible: ['F#m', 'C#m', 'Bm', 'A', 'E', 'D'] },
+        'Gm': { camelot: '6A', compatible: ['Gm', 'Dm', 'Cm', 'A#', 'F', 'D#'] },
+        'G#m': { camelot: '1A', compatible: ['G#m', 'D#m', 'C#m', 'B', 'F#', 'E'] },
+        'Am': { camelot: '8A', compatible: ['Am', 'Em', 'Dm', 'C', 'G', 'F'] },
+        'A#m': { camelot: '3A', compatible: ['A#m', 'Fm', 'D#m', 'C#', 'G#', 'F#'] },
+        'Bm': { camelot: '10A', compatible: ['Bm', 'F#m', 'Em', 'D', 'A', 'G'] }
+    };
+
+    fromKey.addEventListener('change', () => {
+        const key = fromKey.value;
+        
+        if (!key) {
+            compatibleKeys.innerHTML = 'Select a key to see compatible keys for mixing.';
+            return;
+        }
+
+        const keyInfo = camelotWheel[key];
+        
+        if (keyInfo) {
+            compatibleKeys.innerHTML = `
+                <div style="margin-bottom: 12px;">
+                    <span style="color: var(--accent-purple); font-weight: 600;">Camelot:</span> 
+                    <span style="color: white; font-weight: 700;">${keyInfo.camelot}</span>
+                </div>
+                <div style="margin-bottom: 8px; color: var(--text-secondary); font-size: 12px;">Compatible keys for harmonic mixing:</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    ${keyInfo.compatible.map(k => `
+                        <span style="
+                            padding: 4px 10px;
+                            background: rgba(168, 85, 247, 0.15);
+                            border: 1px solid rgba(168, 85, 247, 0.3);
+                            border-radius: 6px;
+                            font-size: 12px;
+                            font-weight: 600;
+                            color: var(--accent-purple);
+                        ">${k}</span>
+                    `).join('')}
+                </div>
+                <div style="margin-top: 12px; font-size: 11px; color: var(--text-muted);">
+                    💡 Tip: Mix tracks within 1 step on the Camelot wheel for smooth transitions
+                </div>
+            `;
+        }
+    });
+
+    // ============================================
+    // STREAM CALCULATOR TOOL
+    // ============================================
+    const streamCount = document.getElementById('streamCount');
+    const earningsResult = document.getElementById('earningsResult');
+
+    // Streaming rates (approximate ranges per stream)
+    const streamingRates = {
+        low: 0.003,   // Conservative estimate
+        high: 0.005,  // Optimistic estimate
+        spotify_avg: 0.004,
+        apple_avg: 0.0075,
+        tidal_avg: 0.0125,
+        amazon_avg: 0.004
+    };
+
+    streamCount.addEventListener('input', calculateEarnings);
+    streamCount.addEventListener('change', calculateEarnings);
+
+    function calculateEarnings() {
+        const streams = parseInt(streamCount.value) || 0;
+        
+        if (streams <= 0) {
+            earningsResult.innerHTML = '$0.00 - $0.00';
+            return;
+        }
+
+        const lowEarnings = (streams * streamingRates.low).toFixed(2);
+        const highEarnings = (streams * streamingRates.high).toFixed(2);
+
+        // Format with commas
+        const formatMoney = (num) => {
+            return parseFloat(num).toLocaleString('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            });
+        };
+
+        earningsResult.innerHTML = `
+            <div style="font-size: 24px; font-weight: 700; color: var(--accent-green);">
+                ${formatMoney(lowEarnings)} - ${formatMoney(highEarnings)}
+            </div>
+            <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                Estimated range across platforms
+            </div>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-color);">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">Platform breakdown:</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                    <div>
+                        <span style="color: #1DB954;">●</span> Spotify: 
+                        <span style="color: white;">${formatMoney(streams * streamingRates.spotify_avg)}</span>
+                    </div>
+                    <div>
+                        <span style="color: #fc3c44;">●</span> Apple: 
+                        <span style="color: white;">${formatMoney(streams * streamingRates.apple_avg)}</span>
+                    </div>
+                    <div>
+                        <span style="color: #00FFFF;">●</span> Tidal: 
+                        <span style="color: white;">${formatMoney(streams * streamingRates.tidal_avg)}</span>
+                    </div>
+                    <div>
+                        <span style="color: #FF9900;">●</span> Amazon: 
+                        <span style="color: white;">${formatMoney(streams * streamingRates.amazon_avg)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }    // ============================================
+    // MAIN ANALYSIS FUNCTION (Complete)
+    // ============================================
+    async function analyzeAudio() {
+        const audioData = state.audioBuffer.getChannelData(0);
+        const sampleRate = state.audioBuffer.sampleRate;
+
+        try {
+            updateProgress(35, 'Detecting tempo...');
+            await sleep(100); // Allow UI to update
+            
+            const bpm = detectBPM(audioData, sampleRate);
+
+            updateProgress(50, 'Analyzing key signature...');
+            await sleep(100);
+            
+            const key = detectKey(audioData, sampleRate);
+
+            updateProgress(60, 'Calculating audio features...');
+            await sleep(100);
+            
+            const energy = calculateEnergy(audioData);
+            const rms = calculateRMS(audioData);
+            const spectralCentroid = calculateSpectralCentroid(audioData, sampleRate);
+            const zeroCrossingRate = calculateZeroCrossingRate(audioData, sampleRate);
+
+            updateProgress(70, 'Mapping energy timeline...');
+            await sleep(100);
+            
+            const energyTimeline = calculateEnergyTimeline(audioData, sampleRate);
+
+            updateProgress(80, 'Determining mood profile...');
+            await sleep(100);
+            
+            // Build features object
+            const features = {
+                bpm,
+                key,
+                energy,
+                rms,
+                spectralCentroid,
+                zeroCrossingRate,
+                energyTimeline
+            };
+
+            // Calculate moods based on features
+            features.moods = calculateMoods(features);
+
+            updateProgress(85, 'Classifying genre...');
+            await sleep(100);
+            
+            features.genre = determineGenre(features);
+
+            updateProgress(90, 'Generating sync suggestions...');
+            await sleep(100);
+            
+            features.scenes = generateScenes(features, state.currentTrack.duration);
+
+            updateProgress(95, 'Finalizing analysis...');
+            await sleep(100);
+
+            // Store analysis data
+            state.analysisData = features;
+            state.currentTrack.analysis = features;
+
+            // Save to library
+            saveToLibrary();
+
+            updateProgress(100, 'Analysis complete!');
+            await sleep(500);
+
+            // Display results
+            displayResults();
+
+        } catch (error) {
+            console.error('Analysis error:', error);
+            handleAnalysisError(error);
+        }
+    }
+
+    // Sleep helper for UI updates
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ============================================
+    // ERROR HANDLING
+    // ============================================
+    function handleAnalysisError(error) {
+        elements.progressContainer.classList.remove('active');
+        elements.progressFill.style.width = '0%';
+        
+        // Show error message
+        const uploadZone = elements.uploadZone;
+        const originalContent = uploadZone.innerHTML;
+        
+        uploadZone.innerHTML = `
+            <div class="upload-zone-icon" style="background: rgba(239, 68, 68, 0.2);">❌</div>
+            <div class="upload-zone-title" style="color: #ef4444;">Analysis Failed</div>
+            <div class="upload-zone-subtitle">
+                ${error.message || 'There was an error processing your audio file.'}
+                <br><br>
+                Please try a different file or format.
+            </div>
+            <button class="btn btn-secondary" id="retryUploadBtn" style="margin-top: 16px;">
+                Try Again
+            </button>
+        `;
+
+        document.getElementById('retryUploadBtn').addEventListener('click', () => {
+            uploadZone.innerHTML = originalContent;
+            resetUpload();
+        });
+
+        // Reset state
+        state.currentTrack = null;
+        state.audioBuffer = null;
+        state.analysisData = null;
+    }
+
+    // ============================================
+    // DRAG AND DROP VISUAL FEEDBACK
+    // ============================================
+    let dragCounter = 0;
+
+    document.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        
+        if (document.getElementById('analyzeSection').classList.contains('active') && 
+            elements.uploadCard.style.display !== 'none') {
+            elements.uploadZone.classList.add('dragover');
+        }
+    });
+
+    document.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        
+        if (dragCounter === 0) {
+            elements.uploadZone.classList.remove('dragover');
+        }
+    });
+
+    document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        elements.uploadZone.classList.remove('dragover');
+    });
+
+    // ============================================
+    // EXPORT CARD HOVER EFFECTS
+    // ============================================
+    document.querySelectorAll('#exportPanel .scene-card').forEach(card => {
+        card.style.cursor = 'pointer';
+        
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-4px)';
+            card.style.boxShadow = '0 10px 40px rgba(0, 0, 0, 0.3)';
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)';
+            card.style.boxShadow = 'none';
+        });
+    });
+
+    // ============================================
+    // KEYBOARD SHORTCUTS
+    // ============================================
+    document.addEventListener('keydown', (e) => {
+        // Escape to reset/go back
+        if (e.key === 'Escape') {
+            if (elements.dnaResults.classList.contains('active')) {
+                // Ask before resetting if analysis is shown
+                if (confirm('Start a new analysis?')) {
+                    resetUpload();
+                }
+            }
+        }
+
+        // Ctrl/Cmd + E to export JSON (when results are shown)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+            if (elements.dnaResults.classList.contains('active') && state.analysisData) {
+                e.preventDefault();
+                document.getElementById('exportJSON').click();
+            }
+        }
+
+        // Ctrl/Cmd + P to generate PDF (when results are shown)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+            if (elements.dnaResults.classList.contains('active') && state.analysisData) {
+                e.preventDefault();
+                generatePDFCertificate();
+            }
+        }
+
+        // Number keys 1-4 for tabs when results are shown
+        if (elements.dnaResults.classList.contains('active')) {
+            const tabMap = { '1': 'dna', '2': 'scenes', '3': 'proof', '4': 'export' };
+            if (tabMap[e.key]) {
+                document.querySelector(`.results-tab[data-panel="${tabMap[e.key]}"]`).click();
+            }
+        }
+    });
+
+    // ============================================
+    // AUDIO CONTEXT HANDLING
+    // ============================================
+    // Resume audio context on user interaction (required by browsers)
+    document.addEventListener('click', () => {
+        if (state.audioContext && state.audioContext.state === 'suspended') {
+            state.audioContext.resume();
+        }
+    }, { once: true });
+
+    // ============================================
+    // LOCAL STORAGE MANAGEMENT
+    // ============================================
+    function getStorageUsage() {
+        let total = 0;
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                total += localStorage[key].length * 2; // UTF-16 = 2 bytes per char
+            }
+        }
+        return total;
+    }
+
+    function formatStorageSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    // Clean up old entries if storage is getting full
+    function cleanupStorage() {
+        const maxSize = 4 * 1024 * 1024; // 4MB limit (safe for most browsers)
+        
+        while (getStorageUsage() > maxSize && state.library.length > 10) {
+            // Remove oldest entries (keep at least 10)
+            state.library.pop();
+        }
+        
+        localStorage.setItem('orbitLibrary', JSON.stringify(state.library));
+    }
+
+    // ============================================
+    // LIBRARY SEARCH (Optional Enhancement)
+    // ============================================
+    function searchLibrary(query) {
+        if (!query) return state.library;
+        
+        const lowerQuery = query.toLowerCase();
+        return state.library.filter(track => {
+            return track.name.toLowerCase().includes(lowerQuery) ||
+                   (track.analysis && (
+                       track.analysis.genre.toLowerCase().includes(lowerQuery) ||
+                       track.analysis.key.toLowerCase().includes(lowerQuery)
+                   ));
+        });
+    }
+
+    // ============================================
+    // TOOLTIP SYSTEM
+    // ============================================
+    function createTooltip(element, text) {
+        element.style.position = 'relative';
+        
+        element.addEventListener('mouseenter', () => {
+            const tooltip = document.createElement('div');
+            tooltip.className = 'orbit-tooltip';
+            tooltip.textContent = text;
+            tooltip.style.cssText = `
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                padding: 8px 12px;
+                background: rgba(0, 0, 0, 0.9);
+                color: white;
+                font-size: 12px;
+                border-radius: 6px;
+                white-space: nowrap;
+                z-index: 1000;
+                pointer-events: none;
+                margin-bottom: 8px;
+            `;
+            element.appendChild(tooltip);
+        });
+        
+        element.addEventListener('mouseleave', () => {
+            const tooltip = element.querySelector('.orbit-tooltip');
+            if (tooltip) tooltip.remove();
+        });
+    }
+
+    // ============================================
+    // INITIALIZATION
+    // ============================================
+    function initializeOrbit() {
+        console.log('🚀 ORBIT by RapperStore - Initializing...');
+
+        // Load library from storage
+        try {
+            const savedLibrary = localStorage.getItem('orbitLibrary');
+            if (savedLibrary) {
+                state.library = JSON.parse(savedLibrary);
+                console.log(`📚 Loaded ${state.library.length} tracks from library`);
+            }
+        } catch (e) {
+            console.warn('Could not load library from storage:', e);
+            state.library = [];
+        }
+
+        // Clean up storage if needed
+        cleanupStorage();
+
+        // Add tooltips to buttons
+        createTooltip(document.getElementById('playPauseBtn'), 'Play/Pause audio');
+        createTooltip(document.getElementById('newTrackBtn'), 'Analyze a new track');
+        createTooltip(document.getElementById('copyHashBtn'), 'Copy SHA-256 hash to clipboard');
+
+        // Check for Web Audio API support
+        if (!window.AudioContext && !window.webkitAudioContext) {
+            elements.uploadZone.innerHTML = `
+                <div class="upload-zone-icon" style="background: rgba(239, 68, 68, 0.2);">⚠️</div>
+                <div class="upload-zone-title" style="color: #ef4444;">Browser Not Supported</div>
+                <div class="upload-zone-subtitle">
+                    Your browser doesn't support the Web Audio API.<br>
+                    Please use Chrome, Firefox, Safari, or Edge.
+                </div>
+            `;
+            return;
+        }
+
+        // Log storage usage
+        console.log(`💾 Storage usage: ${formatStorageSize(getStorageUsage())}`);
+
+        console.log('✅ ORBIT initialized successfully!');
+        console.log('⌨️ Keyboard shortcuts:');
+        console.log('   • Space/T: BPM Tap (in Tools)');
+        console.log('   • 1-4: Switch result tabs');
+        console.log('   • Ctrl+E: Export JSON');
+        console.log('   • Ctrl+P: Download certificate');
+        console.log('   • Escape: New analysis');
+    }
+
+    // ============================================
+    // PERFORMANCE OPTIMIZATION
+    // ============================================
+    // Debounce function for resize events
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+
+    // Throttle function for scroll events
+    function throttle(func, limit) {
+        let inThrottle;
+        return function(...args) {
+            if (!inThrottle) {
+                func.apply(this, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    }
+
+    // ============================================
+    // ACCESSIBILITY ENHANCEMENTS
+    // ============================================
+    // Add ARIA labels
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.setAttribute('role', 'tab');
+        link.setAttribute('aria-selected', link.classList.contains('active'));
+    });
+
+    document.querySelectorAll('.results-tab').forEach(tab => {
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', tab.classList.contains('active'));
+    });
+
+    elements.uploadZone.setAttribute('role', 'button');
+    elements.uploadZone.setAttribute('aria-label', 'Upload audio file for analysis');
+    elements.uploadZone.setAttribute('tabindex', '0');
+
+    // Allow Enter key on upload zone
+    elements.uploadZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            elements.audioFileInput.click();
+        }
+    });
+
+    // ============================================
+    // SERVICE WORKER REGISTRATION (Optional PWA)
+    // ============================================
+    // Uncomment if you want to make this a PWA
+    /*
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/orbit-sw.js')
+                .then(reg => console.log('SW registered:', reg))
+                .catch(err => console.log('SW registration failed:', err));
+        });
+    }
+    */
+
+    // ============================================
+    // ANALYTICS HOOKS (Optional)
+    // ============================================
+    // Track events for your own analytics
+    const analytics = {
+        trackEvent: (category, action, label) => {
+            // Implement your analytics here
+            console.log(`📊 Event: ${category} | ${action} | ${label || ''}`);
+        }
+    };
+
+    // Example usage:
+    // analytics.trackEvent('Analysis', 'Complete', state.analysisData?.genre);
+
+    // ============================================
+    // EXPOSE PUBLIC API (Optional)
+    // ============================================
+    window.ORBIT = {
+        version: '1.0.0',
+        getLibrary: () => [...state.library],
+        getAnalysis: () => state.analysisData ? { ...state.analysisData } : null,
+        getCurrentTrack: () => state.currentTrack ? { ...state.currentTrack } : null,
+        clearLibrary: () => {
+            if (confirm('Clear all tracks from your library?')) {
+                state.library = [];
+                localStorage.removeItem('orbitLibrary');
+                renderLibrary();
+            }
+        },
+        exportAllData: () => {
+            const data = {
+                version: '1.0.0',
+                exportDate: new Date().toISOString(),
+                library: state.library
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            downloadBlob(blob, `ORBIT_Full_Library_Export_${Date.now()}.json`);
+        }
+    };
+
+    // ============================================
+    // RUN INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', initializeOrbit);
+    
+    // If DOM is already loaded
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        initializeOrbit();
+    }
+
+    </script>
+</body>
+</html>
