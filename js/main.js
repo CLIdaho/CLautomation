@@ -149,21 +149,80 @@
     var cards = document.querySelectorAll(".work__card");
     if (!modal || !frame || !cards.length) return;
 
+    var stage = document.getElementById("modalStage");
+    var hint = document.getElementById("modalHint");
+    var track = modal.querySelector(".modal__scroll");
+    var thumb = document.getElementById("modalScrollThumb");
+
     var current = "";
     var lastFocused = null;
+    var gateSel = "";          // selector for a blocking overlay in the previewed site
+    var gateTimer = null;
+    var scrollable = true;     // false once same-origin access is known to fail
 
     function decode(v) {
       try { return atob(v); } catch (e) { return ""; }
     }
 
+    /* The demos live on the same origin as this page, so the frame's document
+       is reachable. Everything that depends on that goes through here and
+       fails soft — a custom domain later would make these cross-origin. */
+    function frameWin() {
+      try {
+        var w = frame.contentWindow;
+        void w.document.body;      // throws cross-origin
+        return w;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function lock(on) {
+      stage.classList.toggle("is-static", on);
+      stage.classList.toggle("is-interactive", !on);
+    }
+
+    /* An age gate (Cloud Hub is 21+) has to stay clickable or the visitor
+       hits a wall they can't dismiss. Don't answer it for them — that gate
+       is the client's compliance requirement, and watching a prospect meet
+       it is half the point of showing the demo. Unlock, wait it out, relock. */
+    function watchGate() {
+      var win = frameWin();
+      if (!gateSel || !win) return lock(scrollable);
+
+      var gate = win.document.querySelector(gateSel);
+      if (!gate) return lock(true);
+
+      lock(false);
+      hint.textContent = "Answer the age check to continue — it's part of the build.";
+      clearTimeout(gateTimer);
+      (function poll() {
+        var w = frameWin();
+        var el = w && w.document.querySelector(gateSel);
+        var gone = !el || !el.offsetParent || w.getComputedStyle(el).display === "none";
+        if (gone) {
+          lock(true);
+          hint.textContent = defaultHint;
+          return;
+        }
+        gateTimer = setTimeout(poll, 250);
+      })();
+    }
+
+    var defaultHint = hint ? hint.textContent : "";
+
     function open(card) {
       current = decode(card.getAttribute("data-site"));
       if (!current) return;
       lastFocused = card;
+      gateSel = card.getAttribute("data-preview-gate") || "";
 
       title.textContent = card.getAttribute("data-name") || "Live preview";
+      hint.textContent = defaultHint;
       loading.hidden = false;
       frame.classList.remove("is-ready");
+      lock(true);
+      setThumb(0);
       frame.src = current;
 
       modal.hidden = false;
@@ -172,9 +231,11 @@
     }
 
     function close() {
+      clearTimeout(gateTimer);
       modal.hidden = true;
       frame.src = "about:blank";
       frame.classList.remove("is-ready");
+      track.classList.remove("is-active");
       document.body.classList.remove("is-locked");
       if (lastFocused) lastFocused.focus();
     }
@@ -183,6 +244,71 @@
       if (frame.src === "about:blank" || !frame.src) return;
       loading.hidden = true;
       frame.classList.add("is-ready");
+
+      // no same-origin access means no scroll forwarding; a dead preview is
+      // worse than an interactive one, so hand control back
+      if (!frameWin()) {
+        scrollable = false;
+        lock(false);
+        hint.textContent = "Live build, running right now. Scroll inside the frame.";
+        return;
+      }
+      scrollable = true;
+      watchGate();
+      setThumb(0);
+    });
+
+    /* --- scroll forwarding: the frame ignores pointers, so the stage
+           translates wheel and drag into scroll position for it --- */
+    function setThumb(ratio) {
+      if (!thumb || !track) return;
+      var win = frameWin();
+      if (!win) return track.classList.remove("is-active");
+      var doc = win.document.documentElement;
+      var range = doc.scrollHeight - win.innerHeight;
+      if (range <= 40) return track.classList.remove("is-active");
+      track.classList.add("is-active");
+      var pct = ratio !== null ? ratio : win.scrollY / range;
+      thumb.style.transform = "translateY(" + (Math.min(Math.max(pct, 0), 1) * (100 / 0.22 - 100)) + "%)";
+    }
+
+    function scrollFrame(dy) {
+      var win = frameWin();
+      if (!win) return;
+      win.scrollBy(0, dy);
+      setThumb(null);
+    }
+
+    stage.addEventListener("wheel", function (e) {
+      if (!stage.classList.contains("is-static")) return;
+      e.preventDefault();
+      scrollFrame(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY);
+    }, { passive: false });
+
+    var touchY = 0;
+    stage.addEventListener("touchstart", function (e) {
+      touchY = e.touches[0].clientY;
+    }, { passive: true });
+
+    stage.addEventListener("touchmove", function (e) {
+      if (!stage.classList.contains("is-static")) return;
+      e.preventDefault();
+      var y = e.touches[0].clientY;
+      scrollFrame(touchY - y);
+      touchY = y;
+    }, { passive: false });
+
+    var KEYS = { ArrowDown: 60, ArrowUp: -60, PageDown: 520, PageUp: -520, " ": 520 };
+    stage.addEventListener("keydown", function (e) {
+      if (!stage.classList.contains("is-static")) return;
+      if (!(e.key in KEYS)) return;
+      e.preventDefault();
+      scrollFrame(KEYS[e.key]);
+    });
+
+    // Tab can otherwise walk into the frame and reach links pointer-events hid
+    frame.addEventListener("focus", function () {
+      if (stage.classList.contains("is-static")) stage.focus();
     });
 
     Array.prototype.forEach.call(cards, function (card) {
@@ -190,7 +316,9 @@
     });
 
     modal.addEventListener("click", function (e) {
-      if (e.target.hasAttribute("data-close")) close();
+      // closest(), not hasAttribute() — clicking the X lands on the <svg>
+      // inside the button, which carries no data-close of its own
+      if (e.target.closest("[data-close]")) close();
     });
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && !modal.hidden) close();
@@ -199,7 +327,7 @@
     // keep focus inside the dialog while it is open
     modal.addEventListener("keydown", function (e) {
       if (e.key !== "Tab") return;
-      var f = modal.querySelectorAll("button, iframe, [href]");
+      var f = modal.querySelectorAll("button, [href], [tabindex]:not([tabindex='-1'])");
       if (!f.length) return;
       var first = f[0], last = f[f.length - 1];
       if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
@@ -236,6 +364,7 @@
 
       var data = collect(form);
       btn.classList.add("is-sending");
+      btn.disabled = true;
 
       fetch(form.action, {
         method: "POST",
@@ -245,6 +374,13 @@
         .then(function (res) {
           if (!res.ok) throw new Error("HTTP " + res.status);
           return res.json();
+        })
+        .then(function (body) {
+          // FormSubmit answers 200 with success:"false" on a rejected send.
+          // Trusting res.ok alone would show the success card and quietly
+          // drop the lead.
+          var ok = body && (body.success === true || body.success === "true");
+          if (!ok) throw new Error((body && body.message) || "rejected");
         })
         .then(function () {
           form.hidden = true;
@@ -260,6 +396,7 @@
         })
         .finally(function () {
           btn.classList.remove("is-sending");
+          btn.disabled = false;
         });
     });
 
@@ -280,6 +417,8 @@
         out[key] = out[key] ? out[key] + ", " + value : value;
       });
       if (!out["Interested in"]) out["Interested in"] = "Not specified";
+      // so hitting reply in the inbox goes to the prospect, not to FormSubmit
+      if (out.Email) out._replyto = out.Email;
       return out;
     }
 
