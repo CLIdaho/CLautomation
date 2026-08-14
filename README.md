@@ -18,7 +18,7 @@ from branch → `main` / root)*
 
 | Section | What it does |
 |---|---|
-| **Hero** | Animated small-town street grid that routes pulses of light like a circuit board — the whole "big-city build, Main Street business" idea in one visual. Headline, two CTAs, and a live "currently booking *[month]*" badge that updates itself. |
+| **Hero** | A flow field — a few hundred particles following a slowly morphing noise field, each leaving a faint additive stroke that accumulates into drifting ribbons of light. Cyan for the build, amber for the town. Nothing repeats and nothing is drawn on a grid. Headline, two CTAs, and a live "currently booking *[month]*" badge that updates itself. |
 | **Stats strip** | Four animated counters: 3 weeks to launch, $500 starting price, 100% accounts in your name, 24 hr reply time. |
 | **Services** | Six cards, priced: Custom Website $500 · Automated Texting $500 · Rewards & POS from $2,000 · Growth Support $200/mo · AI Front Desk (monthly) · DIY Training $300. |
 | **How it works** | Four steps built around the actual differentiator — a free working demo before any money changes hands. |
@@ -75,6 +75,7 @@ Currently featured:
 index.html                     the whole page
 css/style.css                  design tokens in :root, everything derives from them
 js/main.js                     nav, reveals, counters, modal, form, hero canvas
+tools/hero-preview.py          renders a still of the hero animation (see below)
 assets/
   charles-lewis.jpg            About photo (cropped from the original)
   charles-lewis-original.jpeg  untouched original upload
@@ -84,6 +85,26 @@ assets/
 
 No build step, no framework, no dependencies. Open `index.html` or run
 `python3 -m http.server` and go.
+
+## Tuning the hero animation
+
+The constants at the top of `current()` in `js/main.js` are twitchy — the stroke
+alpha especially. Too low and the filaments never surface above the background; too
+high and additive blending blows the overlaps out to white. `tools/hero-preview.py`
+reimplements the identical algorithm on the CPU and writes a still frame, so values can
+be changed and reviewed without guessing:
+
+```bash
+pip install numpy pillow
+python3 tools/hero-preview.py                 # composed, as the page shows it
+python3 tools/hero-preview.py --raw           # field only, no vignette or grain
+python3 tools/hero-preview.py --seed 12       # a different roll of the noise field
+```
+
+Change a constant in the script, look at the output, then mirror it in `js/main.js` —
+the two blocks are labelled to be kept in sync. Remember the output is one frame of
+something that moves; on the live page the ribbons sweep continuously and read stronger
+than any still.
 
 ## Editing notes
 

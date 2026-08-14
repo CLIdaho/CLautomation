@@ -16,7 +16,7 @@
     actionBar();
     workPreview();
     quoteForm();
-    if (!reduced) townGrid();
+    if (!reduced) current();
   });
 
   /* ---------- footer year ---------- */
@@ -294,223 +294,183 @@
     }
   }
 
-  /* ---------- ambient signature ----------
-     A small-town street grid that reads as a circuit board: blocks,
-     intersections, and pulses of light routing through them.
-     Amber = the town, cyan = the build. */
-  function townGrid() {
-    var canvas = document.getElementById("gridCanvas");
+
+  /* ---------- ambient signature: "Current" ----------
+     A flow field of fine light filaments — thousands of short strokes
+     following a slowly morphing noise field, accumulating into ribbons
+     of liquid light. No grid, no dots, no lines drawn on purpose: the
+     shapes are emergent and never repeat.
+
+     Cheap value noise (two octaves) drives the angles. Strokes are
+     drawn additively at very low alpha over a translucent wash, so the
+     canvas itself holds the trail rather than a particle history. */
+  function current() {
+    var canvas = document.getElementById("heroCanvas");
     if (!canvas || !canvas.getContext) return;
-    var ctx = canvas.getContext("2d");
+    var ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) return;
 
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
-    var W = 0, H = 0;
-    var xs = [], ys = [];
-    var blocks = [];
-    var pulses = [];
-    var grid = null;      // pre-rendered static layer
-    var running = true;
-    var raf = null;
+    var W = 0, H = 0, dpr = 1;
+    var parts = [];
+    var raf = null, running = false;
+    var t = 0;                      // field evolution
+    var px = 0, py = 0;             // pointer drift (parallax)
+    var tx = 0, ty = 0;
 
-    var CYAN = "45,212,232";
-    var AMBER = "255,165,58";
+    var BG = "#080B14";
+    var PALETTE = [
+      [45, 212, 232],   // cyan   — the build
+      [45, 212, 232],
+      [73, 168, 245],
+      [91, 124, 250],   // indigo
+      [255, 165, 58]    // amber  — the town
+    ];
 
-    function build() {
+    /* --- value noise, 2 octaves, no dependencies --- */
+    var perm = new Uint8Array(512);
+    (function seed() {
+      var p = [];
+      for (var i = 0; i < 256; i++) p[i] = i;
+      for (var j = 255; j > 0; j--) {
+        var k = Math.floor(Math.random() * (j + 1));
+        var tmp = p[j]; p[j] = p[k]; p[k] = tmp;
+      }
+      for (var m = 0; m < 512; m++) perm[m] = p[m & 255];
+    })();
+
+    function hash(x, y) { return perm[(perm[x & 255] + (y & 255)) & 255] / 255; }
+    function smooth(a) { return a * a * (3 - 2 * a); }
+
+    function noise2(x, y) {
+      var xi = Math.floor(x), yi = Math.floor(y);
+      var xf = smooth(x - xi), yf = smooth(y - yi);
+      var a = hash(xi, yi), b = hash(xi + 1, yi);
+      var c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+      return (a + (b - a) * xf) * (1 - yf) + (c + (d - c) * xf) * yf;
+    }
+
+    function field(x, y) {
+      var n = noise2(x, y) * 0.68 + noise2(x * 2.3, y * 2.3) * 0.32;
+      return n * Math.PI * 3.2;     // angle in radians
+    }
+
+    /* Every constant below was tuned against an offline render of this
+       exact algorithm — see the note in the README. Alpha in particular
+       is load-bearing: much under 0.15 and the filaments never surface
+       above the background. */
+    var SCALE = 0.0024;             // field zoom — governs ribbon size
+    var WASH  = 0.014;              // per-frame fade; lower = longer trails
+    var DRIFT = 0.00042;            // how fast the field itself morphs
+    var HALO_W = 5.5, HALO_A = 0.30;// the bloom pass
+
+    function resize() {
       var rect = canvas.getBoundingClientRect();
       W = Math.max(rect.width, 1);
       H = Math.max(rect.height, 1);
+      dpr = Math.min(window.devicePixelRatio || 1, W < 700 ? 1.5 : 2);
       canvas.width = Math.round(W * dpr);
       canvas.height = Math.round(H * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // irregular block sizes — a town plat, not graph paper
-      var step = W < 700 ? 96 : 132;
-      xs = []; ys = [];
-      for (var x = -40; x < W + 120; x += step * (0.7 + Math.random() * 0.75)) xs.push(Math.round(x));
-      for (var y = -40; y < H + 120; y += step * (0.62 + Math.random() * 0.7)) ys.push(Math.round(y));
-
-      // a scatter of "buildings" filling some blocks
-      blocks = [];
-      for (var i = 0; i < xs.length - 1; i++) {
-        for (var j = 0; j < ys.length - 1; j++) {
-          if (Math.random() > 0.30) continue;
-          var pad = 10 + Math.random() * 16;
-          var bw = xs[i + 1] - xs[i] - pad * 2;
-          var bh = ys[j + 1] - ys[j] - pad * 2;
-          if (bw < 16 || bh < 16) continue;
-          blocks.push({ x: xs[i] + pad, y: ys[j] + pad, w: bw, h: bh, warm: Math.random() < 0.34 });
-        }
-      }
-
-      renderGrid();
-      seedPulses();
+      ctx.fillStyle = BG;
+      ctx.fillRect(0, 0, W, H);
+      seedParts();
     }
 
-    function renderGrid() {
-      grid = document.createElement("canvas");
-      grid.width = canvas.width;
-      grid.height = canvas.height;
-      var g = grid.getContext("2d");
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // streets
-      g.lineWidth = 1;
-      g.strokeStyle = "rgba(255,255,255,0.055)";
-      g.beginPath();
-      xs.forEach(function (x) { g.moveTo(x + 0.5, 0); g.lineTo(x + 0.5, H); });
-      ys.forEach(function (y) { g.moveTo(0, y + 0.5); g.lineTo(W, y + 0.5); });
-      g.stroke();
-
-      // blocks
-      blocks.forEach(function (b) {
-        g.fillStyle = b.warm ? "rgba(" + AMBER + ",0.030)" : "rgba(255,255,255,0.016)";
-        g.strokeStyle = b.warm ? "rgba(" + AMBER + ",0.10)" : "rgba(255,255,255,0.045)";
-        g.lineWidth = 1;
-        g.beginPath();
-        g.rect(b.x, b.y, b.w, b.h);
-        g.fill();
-        g.stroke();
-      });
-
-      // intersection nodes
-      xs.forEach(function (x) {
-        ys.forEach(function (y) {
-          if (Math.random() > 0.22) return;
-          g.fillStyle = "rgba(255,255,255,0.10)";
-          g.beginPath();
-          g.arc(x, y, 1.4, 0, Math.PI * 2);
-          g.fill();
-        });
-      });
+    function spawn(p) {
+      p.x = Math.random() * W;
+      p.y = Math.random() * H;
+      p.life = 0;
+      p.max = 140 + Math.random() * 460;
+      p.speed = 0.5 + Math.random() * 1.1;
+      p.width = 0.5 + Math.random() * 0.8;
+      var c = PALETTE[(Math.random() * PALETTE.length) | 0];
+      p.color = c[0] + "," + c[1] + "," + c[2];
+      p.alpha = 0.17 + Math.random() * 0.21;
+      return p;
     }
 
-    function seedPulses() {
-      pulses = [];
-      var count = W < 700 ? 7 : 13;
-      for (var i = 0; i < count; i++) pulses.push(newPulse(true));
-    }
-
-    function newPulse(anywhere) {
-      var horizontal = Math.random() < 0.5;
-      var ix = Math.floor(Math.random() * xs.length);
-      var iy = Math.floor(Math.random() * ys.length);
-      return {
-        ix: ix,
-        iy: iy,
-        dir: horizontal ? (Math.random() < 0.5 ? 1 : -1) : 0,
-        vert: !horizontal,
-        vdir: horizontal ? 0 : (Math.random() < 0.5 ? 1 : -1),
-        t: anywhere ? Math.random() : 0,
-        speed: 0.0022 + Math.random() * 0.0042,
-        color: Math.random() < 0.30 ? AMBER : CYAN,
-        life: 0,
-        maxLife: 900 + Math.random() * 1400
-      };
-    }
-
-    function pos(p) {
-      var x0 = xs[p.ix], y0 = ys[p.iy];
-      if (p.vert) {
-        var iy2 = clamp(p.iy + p.vdir, 0, ys.length - 1);
-        return { x: x0, y: y0 + (ys[iy2] - y0) * p.t, dx: 0, dy: p.vdir };
-      }
-      var ix2 = clamp(p.ix + p.dir, 0, xs.length - 1);
-      return { x: x0 + (xs[ix2] - x0) * p.t, y: y0, dx: p.dir, dy: 0 };
-    }
-
-    function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
-
-    function advance(p, dt) {
-      p.t += p.speed * dt;
-      p.life += dt;
-      if (p.t < 1) return;
-
-      // arrived at the next intersection — pick a new street
-      p.t = 0;
-      if (p.vert) p.iy = clamp(p.iy + p.vdir, 0, ys.length - 1);
-      else p.ix = clamp(p.ix + p.dir, 0, xs.length - 1);
-
-      var offGrid = p.ix <= 0 || p.ix >= xs.length - 1 || p.iy <= 0 || p.iy >= ys.length - 1;
-      if (offGrid || p.life > p.maxLife) {
-        var fresh = newPulse(false);
-        for (var k in fresh) p[k] = fresh[k];
-        return;
-      }
-
-      if (Math.random() < 0.42) {           // turn
-        if (p.vert) { p.vert = false; p.vdir = 0; p.dir = Math.random() < 0.5 ? 1 : -1; }
-        else { p.vert = true; p.dir = 0; p.vdir = Math.random() < 0.5 ? 1 : -1; }
+    function seedParts() {
+      var target = W < 700 ? 240 : Math.min(460, Math.round(W * 0.29));
+      parts = [];
+      for (var i = 0; i < target; i++) {
+        var p = spawn({});
+        p.life = Math.random() * p.max;   // desynchronise the first cycle
+        parts.push(p);
       }
     }
 
-    var last = 0;
-    function frame(ts) {
+    function frame() {
       if (!running) return;
-      var dt = Math.min(ts - last || 16, 48);
-      last = ts;
 
-      ctx.clearRect(0, 0, W, H);
-      if (grid) ctx.drawImage(grid, 0, 0, W, H);
+      // pointer parallax, heavily damped
+      px += (tx - px) * 0.035;
+      py += (ty - py) * 0.035;
+
+      // translucent wash — this is what leaves the silk trail
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "rgba(8,11,20," + WASH + ")";
+      ctx.fillRect(0, 0, W, H);
 
       ctx.globalCompositeOperation = "lighter";
-      pulses.forEach(function (p) {
-        advance(p, dt);
-        var pt = pos(p);
-        var tail = 58;
-        var tx = pt.x - pt.dx * tail;
-        var ty = pt.y - pt.dy * tail;
+      ctx.lineCap = "round";
 
-        var g = ctx.createLinearGradient(tx, ty, pt.x, pt.y);
-        g.addColorStop(0, "rgba(" + p.color + ",0)");
-        g.addColorStop(1, "rgba(" + p.color + ",0.85)");
-        ctx.strokeStyle = g;
-        ctx.lineWidth = 1.6;
-        ctx.lineCap = "round";
+      for (var i = 0; i < parts.length; i++) {
+        var p = parts[i];
+        var a = field((p.x + px) * SCALE, (p.y + py) * SCALE + t);
+        var nx = p.x + Math.cos(a) * p.speed;
+        var ny = p.y + Math.sin(a) * p.speed;
+
+        // fade in and out across the particle's life so nothing pops
+        var envelope = Math.sin((p.life / p.max) * Math.PI);
+        var alpha = p.alpha * envelope;
+
         ctx.beginPath();
-        ctx.moveTo(tx, ty);
-        ctx.lineTo(pt.x, pt.y);
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(nx, ny);
+
+        // bloom pass first: wide and faint, so the core sits inside a halo
+        ctx.strokeStyle = "rgba(" + p.color + "," + (alpha * HALO_A).toFixed(4) + ")";
+        ctx.lineWidth = p.width * HALO_W;
         ctx.stroke();
 
-        ctx.fillStyle = "rgba(" + p.color + ",0.95)";
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 1.9, 0, Math.PI * 2);
-        ctx.fill();
+        // then the filament itself
+        ctx.strokeStyle = "rgba(" + p.color + "," + alpha.toFixed(4) + ")";
+        ctx.lineWidth = p.width;
+        ctx.stroke();
 
-        ctx.fillStyle = "rgba(" + p.color + ",0.10)";
-        ctx.beginPath();
-        ctx.arc(pt.x, pt.y, 7, 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.globalCompositeOperation = "source-over";
+        p.x = nx; p.y = ny; p.life++;
 
+        if (p.life > p.max || nx < -60 || nx > W + 60 || ny < -60 || ny > H + 60) spawn(p);
+      }
+
+      t += DRIFT;                    // the field itself drifts, slowly
       raf = requestAnimationFrame(frame);
     }
 
-    function start() {
-      if (raf) return;
-      running = true; last = 0;
-      raf = requestAnimationFrame(frame);
-    }
-    function stop() {
-      running = false;
-      if (raf) cancelAnimationFrame(raf);
-      raf = null;
-    }
+    function start() { if (raf) return; running = true; raf = requestAnimationFrame(frame); }
+    function stop() { running = false; if (raf) cancelAnimationFrame(raf); raf = null; }
 
-    build();
+    resize();
     start();
 
     var resizeTimer;
     window.addEventListener("resize", function () {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(build, 220);
+      resizeTimer = setTimeout(resize, 240);
     });
+
+    // parallax only where there's a real pointer
+    if (window.matchMedia("(pointer: fine)").matches) {
+      window.addEventListener("mousemove", function (e) {
+        tx = (e.clientX / window.innerWidth - 0.5) * 220;
+        ty = (e.clientY / window.innerHeight - 0.5) * 220;
+      }, { passive: true });
+    }
 
     document.addEventListener("visibilitychange", function () {
       if (document.hidden) stop(); else start();
     });
 
-    // don't burn frames once the hero has scrolled away
     if ("IntersectionObserver" in window) {
       new IntersectionObserver(function (entries) {
         entries.forEach(function (e) { e.isIntersecting ? start() : stop(); });
