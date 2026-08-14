@@ -12,6 +12,14 @@ quote form.
 **Live:** https://clewiidaho.github.io/CLautomation/ *(enable in Settings → Pages → Deploy
 from branch → `main` / root)*
 
+## Before you send this link to anyone
+
+1. **Activate the quote form** — it delivers nothing until you do. Steps below. Until then
+   every submission is silently discarded.
+2. **Read the copy.** Pricing, the stats strip, and the About section are promises with your
+   name on them.
+3. **Open it on your phone**, including a portfolio preview, and answer the Cloud Hub age gate.
+
 ---
 
 ## What's on the page
@@ -20,9 +28,9 @@ from branch → `main` / root)*
 |---|---|
 | **Hero** | A flow field — a few hundred particles following a slowly morphing noise field, each leaving a faint additive stroke that accumulates into drifting ribbons of light. Cyan for the build, amber for the town. Nothing repeats and nothing is drawn on a grid. Headline, two CTAs, and a live "currently booking *[month]*" badge that updates itself. |
 | **Stats strip** | Four animated counters: 3 weeks to launch, $500 starting price, 100% accounts in your name, 24 hr reply time. |
-| **Services** | Six cards, priced: Custom Website $500 · Automated Texting $500 · Rewards & POS from $2,000 · Growth Support $200/mo · AI Front Desk (monthly) · DIY Training $300. |
+| **Services** | Five priced cards — Custom Website $500 · Automated Texting $500 · Rewards & POS from $2,000 · Growth Support $200/mo · DIY Training $300 — plus a sixth "not sure which you need?" card that routes to the quote form rather than inventing a service. |
 | **How it works** | Four steps built around the actual differentiator — a free working demo before any money changes hands. |
-| **Work** | Two portfolio cards. No visible link: each card opens a modal with a live preview of the site running in a frame, plus an "Open in a new tab" button. |
+| **Work** | Two portfolio cards. No visible link: each card opens a modal with a live preview of the site running in a frame, plus an "Open in a new tab" button. Preview is look-and-scroll only — see below. |
 | **About** | Photo and the personal pitch. Ownership terms called out explicitly. |
 | **Get a quote** | Working email form — see below. |
 | **Mobile** | Sticky bottom action bar, full-screen preview modal, 44px+ tap targets, no horizontal scroll at 375px. |
@@ -69,6 +77,25 @@ Currently featured:
 - **Cloud Hub Vape & Smoke** — Boise retail demo (age gate, rewards, order-ahead, themes)
 - **Traffic Flow Solutions** — B2B traffic control plans demo
 
+### The preview is look-and-scroll only
+
+The embedded demo ignores clicks entirely: `pointer-events: none` on the iframe, plus a
+`sandbox` attribute that blocks form submission, popups, downloads, and top-level navigation
+from inside it. Tab focus is bounced back out so a keyboard can't reach in either. Wheel,
+drag, and arrow keys are translated into scroll position for the frame, and a slim indicator
+on the right edge stands in for the scrollbar the visitor can't reach.
+
+This works because the demos and this site share the `clewiidaho.github.io` origin, so the
+page can script the frame directly. **If this ever moves to a custom domain, the frames
+become cross-origin and the scroll forwarding stops working** — the code detects that and
+falls back to a fully interactive preview rather than a dead one.
+
+**Cloud Hub's 21+ age gate is deliberately left clickable.** The preview stays interactive
+while the gate is up, watches for it to be dismissed, then locks to scroll-only. The visitor
+answers it themselves — that gate is the client's compliance requirement, not decoration, and
+a prospect seeing it is a feature. Any future portfolio entry with a blocking overlay can opt
+in the same way with `data-preview-gate="<selector>"` on its card.
+
 ## Files
 
 ```
@@ -112,7 +139,13 @@ than any still.
   Nothing hardcodes a color outside that block, so a retheme is one edit.
 - **Prices** appear in the service cards in `index.html` and in the stats strip. Change
   both.
-- **Photo:** the original upload had a green `#OPENTOWORK` LinkedIn banner across the
-  bottom-left corner. `assets/charles-lewis.jpg` is cropped to remove it. To swap in a new
-  photo, drop in a square image at the same path.
+- **Photo:** the original upload has a green `#OPENTOWORK` LinkedIn banner sweeping across
+  the bottom-left. `assets/charles-lewis.jpg` is cropped from `charles-lewis-original.jpeg`
+  at `(150, 0) → (768, 612)` — wide enough for the full hat, face, beard and collar. That
+  crop clips a corner of the banner, so the affected rows are filled by replicating the
+  blurred background pixel to their right and softening the seam. It's a corner of
+  out-of-focus background, nothing structural.
+  Note the source has **no headroom above the hat** — the crown sits at y≈20 of 800 — so no
+  crop can put space above his head. A photo with room above the subject would frame better;
+  drop any replacement at the same path and update the `width`/`height` on the `<img>`.
 - All ambient animation is disabled under `prefers-reduced-motion`.

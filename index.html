@@ -201,22 +201,6 @@
       <article class="card reveal">
         <div class="card__top">
           <span class="card__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M5 10a7 7 0 0114 0v4a4 4 0 01-4 4h-1.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="2.8" y="10" width="4" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/><rect x="17.2" y="10" width="4" height="6" rx="1.6" stroke="currentColor" stroke-width="1.6"/></svg>
-          </span>
-          <span class="price">monthly</span>
-        </div>
-        <h3>AI Front Desk</h3>
-        <p>When the real problem is the phone, not the website. An assistant that answers, takes the details, follows up on leads, and reports back weekly.</p>
-        <ul class="ticks">
-          <li>Missed-call and after-hours coverage</li>
-          <li>Lead follow-up and review responses</li>
-          <li>Flat monthly rate, quoted on the call</li>
-        </ul>
-      </article>
-
-      <article class="card reveal">
-        <div class="card__top">
-          <span class="card__icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 4L2.8 8.2 12 12.4l9.2-4.2L12 4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M6.5 10.6v4.6c0 1.4 2.5 2.6 5.5 2.6s5.5-1.2 5.5-2.6v-4.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </span>
           <span class="price">$300</span>
@@ -228,6 +212,12 @@
           <li>You keep every login</li>
           <li>Upgrade to a custom build anytime</li>
         </ul>
+      </article>
+
+      <article class="card card--ask reveal">
+        <h3>Not sure which you need?</h3>
+        <p>Most people aren't. Tell me what's slowing your day down — missed calls, no website, a site nobody can find — and I'll tell you what I'd build first and what it runs.</p>
+        <a class="btn btn--ghost btn--sm" href="#quote">Ask me straight</a>
       </article>
     </div>
   </div>
@@ -293,7 +283,7 @@
     <div class="work">
       <!-- Project 1 -->
       <button class="work__card reveal" type="button" data-site="aHR0cHM6Ly9jbGV3aWlkYWhvLmdpdGh1Yi5pby9jbG91ZGh1YnZhcGUv"
-              data-name="Cloud Hub Vape &amp; Smoke" aria-haspopup="dialog">
+              data-name="Cloud Hub Vape &amp; Smoke" data-preview-gate="#ageGate" aria-haspopup="dialog">
         <div class="work__thumb work__thumb--cloud" aria-hidden="true">
           <div class="mock mock--cloud">
             <div class="mock__bar"><i></i><i></i><i></i></div>
@@ -349,7 +339,7 @@
   <div class="container about">
     <div class="about__photo reveal">
       <div class="about__frame">
-        <img src="assets/charles-lewis.jpg" alt="Charles Lewis, founder of CL Automation" width="510" height="510" loading="lazy" decoding="async">
+        <img src="assets/charles-lewis.jpg" alt="Charles Lewis, founder of CL Automation" width="618" height="612" loading="lazy" decoding="async">
       </div>
       <div class="about__badge">
         <span class="dot" aria-hidden="true"></span> Boise, Idaho
@@ -454,7 +444,6 @@
             <label class="chip"><input type="checkbox" name="Interested in" value="Automated Texting"><span>Automated Texting</span></label>
             <label class="chip"><input type="checkbox" name="Interested in" value="Rewards / POS"><span>Rewards / POS</span></label>
             <label class="chip"><input type="checkbox" name="Interested in" value="Growth Support"><span>Growth Support</span></label>
-            <label class="chip"><input type="checkbox" name="Interested in" value="AI Front Desk"><span>AI Front Desk</span></label>
             <label class="chip"><input type="checkbox" name="Interested in" value="Not sure yet"><span>Not sure yet</span></label>
           </div>
         </fieldset>
@@ -536,18 +525,20 @@
   <div class="modal__backdrop" data-close></div>
   <div class="modal__panel" role="document">
     <div class="modal__head">
-      <div class="modal__chrome" aria-hidden="true"><i></i><i></i><i></i></div>
       <h3 class="modal__title" id="modalTitle">Live preview</h3>
       <button class="modal__close" type="button" data-close aria-label="Close preview">
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       </button>
     </div>
-    <div class="modal__stage">
+    <div class="modal__stage" id="modalStage" tabindex="0" aria-label="Site preview, scrollable">
       <div class="modal__loading" id="modalLoading"><span class="spinner spinner--lg" aria-hidden="true"></span> Loading live site…</div>
-      <iframe class="modal__frame" id="modalFrame" title="Live site preview" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      <iframe class="modal__frame" id="modalFrame" title="Live site preview"
+              loading="lazy" referrerpolicy="no-referrer"
+              sandbox="allow-scripts allow-same-origin"></iframe>
+      <div class="modal__scroll" aria-hidden="true"><span id="modalScrollThumb"></span></div>
     </div>
     <div class="modal__foot">
-      <p class="modal__hint">Live build, running right now. Scroll inside the frame.</p>
+      <p class="modal__hint" id="modalHint">Live build — preview only. Scroll to look around.</p>
       <button class="btn btn--primary btn--sm" type="button" id="openLive">Open in a new tab</button>
     </div>
   </div>

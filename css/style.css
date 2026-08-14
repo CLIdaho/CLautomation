@@ -371,6 +371,17 @@ p { text-wrap: pretty; }
 .card h3 { margin-bottom: .55rem; }
 .card > p { color: var(--text-dim); font-size: .94rem; margin-bottom: 1.15rem; }
 
+/* the sixth grid cell: a question, not an invented service */
+.card--ask {
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  background:
+    radial-gradient(120% 160% at 100% 0%, rgba(var(--amber-rgb), .08), transparent 62%),
+    var(--bg-card);
+  border-style: dashed;
+}
+.card--ask h3 { margin-bottom: .55rem; }
+.card--ask p { color: var(--text-dim); font-size: .94rem; margin-bottom: 1.35rem; }
+
 .ticks { display: grid; gap: .5rem; border-top: 1px solid var(--line-soft); padding-top: 1.1rem; }
 .ticks li {
   position: relative; padding-left: 1.5rem; font-size: .875rem; color: var(--text-dim);
@@ -499,7 +510,7 @@ p { text-wrap: pretty; }
   grid-template-columns: minmax(0, 340px) minmax(0, 1fr);
   align-items: center;
 }
-.about__photo { position: relative; justify-self: center; width: 100%; max-width: 340px; }
+.about__photo { position: relative; justify-self: center; width: 100%; max-width: 320px; }
 .about__frame {
   position: relative; border-radius: 22px; overflow: hidden;
   border: 1px solid var(--line);
@@ -685,11 +696,9 @@ select option { background: var(--bg-card); color: var(--text); }
   display: flex; align-items: center; gap: 1rem; padding: 12px 14px;
   border-bottom: 1px solid var(--line); background: rgba(255,255,255,.03); flex: none;
 }
-.modal__chrome { display: flex; gap: 6px; flex: none; }
-.modal__chrome i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.16); }
 .modal__title {
   font-size: .92rem; font-weight: 600; font-family: var(--font-body);
-  color: var(--text-dim); flex: 1; text-align: center;
+  color: var(--text); flex: 1;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .modal__close {
@@ -700,9 +709,32 @@ select option { background: var(--bg-card); color: var(--text); }
 .modal__close:hover { color: var(--text); border-color: var(--cyan-soft); background: rgba(var(--cyan-rgb), .1); }
 .modal__close svg { width: 17px; height: 17px; }
 
-.modal__stage { position: relative; flex: 1; min-height: 0; background: var(--bg); }
+.modal__stage {
+  position: relative; flex: 1; min-height: 0; background: var(--bg);
+  overscroll-behavior: contain; touch-action: none;
+}
+.modal__stage:focus-visible { outline: 2px solid var(--cyan); outline-offset: -3px; }
 .modal__frame { width: 100%; height: 100%; border: 0; background: var(--bg); opacity: 0; transition: opacity var(--t-mid); }
 .modal__frame.is-ready { opacity: 1; }
+
+/* Look, don't touch. Lifted while an age gate is up, and dropped entirely
+   if the frame turns out to be cross-origin (see workPreview in main.js). */
+.modal__stage.is-static .modal__frame { pointer-events: none; }
+.modal__stage.is-interactive { touch-action: auto; }
+
+/* native scrollbars live inside the frame and are unreachable from out here,
+   so the preview needs its own hint that there's more below */
+.modal__scroll {
+  position: absolute; top: 10px; right: 6px; bottom: 10px; width: 3px;
+  border-radius: 3px; background: rgba(255,255,255,.06);
+  opacity: 0; transition: opacity var(--t-mid); pointer-events: none;
+}
+.modal__scroll.is-active { opacity: 1; }
+.modal__scroll span {
+  position: absolute; left: 0; right: 0; top: 0; height: 22%;
+  border-radius: 3px; background: var(--grad);
+  transition: transform .12s linear;
+}
 .modal__loading {
   position: absolute; inset: 0; display: grid; place-items: center; gap: .9rem;
   align-content: center; color: var(--text-dim); font-size: .88rem;
