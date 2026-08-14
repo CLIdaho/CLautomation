@@ -702,12 +702,16 @@ select option { background: var(--bg-card); color: var(--text); }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .modal__close {
-  width: 38px; height: 38px; flex: none; display: grid; place-items: center;
-  border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.04);
+  width: 44px; height: 44px; flex: none; display: grid; place-items: center;
+  border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.04);
   color: var(--text-dim); cursor: pointer; transition: all var(--t-micro);
 }
 .modal__close:hover { color: var(--text); border-color: var(--cyan-soft); background: rgba(var(--cyan-rgb), .1); }
 .modal__close svg { width: 17px; height: 17px; }
+
+/* Icons never become the event target. The close button broke exactly this way
+   once — the click landed on the <svg> inside it, which carries no data-close. */
+.modal__close svg, .btn svg, .work__open svg { pointer-events: none; }
 
 .modal__stage {
   position: relative; flex: 1; min-height: 0; background: var(--bg);

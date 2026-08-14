@@ -102,13 +102,50 @@ in the same way with `data-preview-gate="<selector>"` on its card.
 index.html                     the whole page
 css/style.css                  design tokens in :root, everything derives from them
 js/main.js                     nav, reveals, counters, modal, form, hero canvas
+tools/smoke-test.js            drives the real page in a browser (see Testing)
 tools/hero-preview.py          renders a still of the hero animation (see below)
 assets/
+  icon.svg                     CLA monogram — favicon and the nav mark
+  icon-cl.svg                  CL-only variant, denser tabs (see Branding)
+  favicon-32.png               raster fallback
+  apple-touch-icon.png         180×180 for iOS home screens
   charles-lewis.jpg            About photo (cropped from the original)
   charles-lewis-original.jpeg  untouched original upload
   og.png                       1200×630 link-preview card
   fonts/                       Space Grotesk, Inter, JetBrains Mono (self-hosted woff2)
 ```
+
+## Testing
+
+```bash
+node tools/smoke-test.js        # starts its own server if one isn't running
+```
+
+Drives the page in a real browser at desktop and mobile widths and asserts the things that
+have actually broken here: the preview opens and closes via the X and Escape, the close
+button is on screen and meets 44px, a click at its centre reaches a `[data-close]` element,
+the frame is non-interactive while locked, the form intercepts submit, no horizontal scroll,
+no console errors. Plus static checks — every `getElementById` resolves, CSS braces balance,
+no undefined custom properties, no missing assets.
+
+Needs Chromium and playwright (`npm i -g playwright`); point at a specific binary with
+`CHROMIUM_PATH=`. **Run it before pushing.** Two rounds of fixes shipped on reasoning alone
+before this existed, and one of them was wrong.
+
+## Branding
+
+The mark is a **CLA monogram** — geometric letterforms knocked out of the cyan → indigo →
+amber gradient on a rounded tile. Drawn paths only: the previous favicon used SVG `<text>`
+with `font-family: monospace`, which renders with whatever font the viewer's OS supplies and
+is ignored outright by some browsers.
+
+Three letters get dense at 16px. On a retina display the tab icon renders at 32px and reads
+fine; on a 1× display it's tight. If you'd rather have a crisper tab, `assets/icon-cl.svg` is
+the same tile with just **CL** at a larger cap height — swap the `rel="icon"` href, no other
+change.
+
+The nav mark is inlined in `index.html` so its gradient can reference the CSS tokens. It's
+the same artwork as `assets/icon.svg` — **change one, change both.**
 
 No build step, no framework, no dependencies. Open `index.html` or run
 `python3 -m http.server` and go.
@@ -135,6 +172,11 @@ than any still.
 
 ## Editing notes
 
+- **Bump the cache-buster on every CSS or JS change.** `index.html` loads
+  `css/style.css?v=2` and `js/main.js?v=2`; increment both. GitHub Pages serves these with
+  `cache-control: max-age=600` and no version in the filename, so without the bump a visitor
+  who loaded the site in the last ten minutes keeps running the old code — which already cost
+  one round of chasing a bug that was fixed and deployed.
 - **Colors** live in `:root` in `css/style.css`. Cyan is the build, amber is the town.
   Nothing hardcodes a color outside that block, so a retheme is one edit.
 - **Prices** appear in the service cards in `index.html` and in the stats strip. Change
