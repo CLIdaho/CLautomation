@@ -9,7 +9,7 @@ quote form.
 > the business is intended to run — read them before sending the link to anyone and change
 > anything you wouldn't want to be held to.
 
-**Live:** https://clewiidaho.github.io/CLautomation/ *(enable in Settings → Pages → Deploy
+**Live:** https://clidaho.github.io/CLautomation/ *(enable in Settings → Pages → Deploy
 from branch → `main` / root)*
 
 ## Before you send this link to anyone
@@ -85,7 +85,7 @@ from inside it. Tab focus is bounced back out so a keyboard can't reach in eithe
 drag, and arrow keys are translated into scroll position for the frame, and a slim indicator
 on the right edge stands in for the scrollbar the visitor can't reach.
 
-This works because the demos and this site share the `clewiidaho.github.io` origin, so the
+This works because the demos and this site share the `clidaho.github.io` origin, so the
 page can script the frame directly. **If this ever moves to a custom domain, the frames
 become cross-origin and the scroll forwarding stops working** — the code detects that and
 falls back to a fully interactive preview rather than a dead one.
