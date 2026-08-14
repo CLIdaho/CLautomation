@@ -96,6 +96,13 @@ answers it themselves — that gate is the client's compliance requirement, not 
 a prospect seeing it is a feature. Any future portfolio entry with a blocking overlay can opt
 in the same way with `data-preview-gate="<selector>"` on its card.
 
+Whether the gate is still up is decided from computed style — `display`, `visibility`,
+`opacity`, `pointer-events`, and the element's box. **Don't reach for `offsetParent` here:**
+it is `null` for anything `position: fixed`, which every overlay of this kind is, so it reads
+as "already dismissed" the moment the gate appears and relocks the preview against a gate the
+visitor can't answer. That exact bug made the Cloud Hub preview a dead end. `tools/fixtures/age-gate.html`
+reproduces the shape of the trap and the smoke test drives it.
+
 ## Files
 
 ```
@@ -103,6 +110,7 @@ index.html                     the whole page
 css/style.css                  design tokens in :root, everything derives from them
 js/main.js                     nav, reveals, counters, modal, form, hero canvas
 tools/smoke-test.js            drives the real page in a browser (see Testing)
+tools/fixtures/age-gate.html   stand-in blocking overlay the smoke test clicks through
 tools/hero-preview.py          renders a still of the hero animation (see below)
 assets/
   icon.svg                     CLA monogram — favicon and the nav mark

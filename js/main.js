@@ -186,21 +186,33 @@
        hits a wall they can't dismiss. Don't answer it for them — that gate
        is the client's compliance requirement, and watching a prospect meet
        it is half the point of showing the demo. Unlock, wait it out, relock. */
+    /* Is the overlay actually covering the view right now? offsetParent is no
+       help — it reads null for anything position:fixed, which is every overlay
+       of this kind, so testing it locked the gate the instant it appeared. And
+       sites dismiss these by fading opacity or dropping pointer-events at least
+       as often as by display:none. Ask the browser what it computed instead. */
+    function gateUp(win, el) {
+      if (!el) return false;
+      var cs = win.getComputedStyle(el);
+      if (cs.display === "none" || cs.visibility === "hidden") return false;
+      if (cs.pointerEvents === "none") return false;
+      if (parseFloat(cs.opacity) < 0.05) return false;
+      var r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    }
+
     function watchGate() {
       var win = frameWin();
       if (!gateSel || !win) return lock(scrollable);
-
-      var gate = win.document.querySelector(gateSel);
-      if (!gate) return lock(true);
+      if (!gateUp(win, win.document.querySelector(gateSel))) return lock(true);
 
       lock(false);
       hint.textContent = "Answer the age check to continue — it's part of the build.";
       clearTimeout(gateTimer);
       (function poll() {
         var w = frameWin();
-        var el = w && w.document.querySelector(gateSel);
-        var gone = !el || !el.offsetParent || w.getComputedStyle(el).display === "none";
-        if (gone) {
+        if (!w) return lock(scrollable);
+        if (!gateUp(w, w.document.querySelector(gateSel))) {
           lock(true);
           hint.textContent = defaultHint;
           return;
@@ -254,6 +266,11 @@
         return;
       }
       scrollable = true;
+      // an unlocked gate invites a real click, which moves focus into the frame
+      // and puts keystrokes out of reach of the listener on this document
+      frameWin().document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") close();
+      });
       watchGate();
       setThumb(0);
     });
