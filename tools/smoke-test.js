@@ -173,6 +173,37 @@ async function reachable() {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(200);
 
+    /* A blocking overlay in a preview has to stay clickable or the visitor
+       hits a wall and never sees the site. This drives a same-origin fixture
+       that hides itself the way Cloud Hub's 21+ gate really does — opacity
+       and pointer-events on a position:fixed element, so offsetParent is null
+       throughout — because reading offsetParent here once locked the gate the
+       instant it appeared and made the whole preview a dead end. */
+    await page.evaluate((base) => {
+      const c = document.querySelector(".work__card");
+      c.setAttribute("data-site", btoa(`${base}/tools/fixtures/age-gate.html`));
+      c.setAttribute("data-preview-gate", "#ageGate");
+    }, BASE);
+    await page.click(".work__card");
+    await page.waitForTimeout(900);
+
+    ok("preview unlocks so a blocking gate can be answered",
+      await page.evaluate(() => {
+        const stage = document.getElementById("modalStage");
+        return stage.classList.contains("is-interactive") &&
+          !stage.classList.contains("is-static") &&
+          getComputedStyle(document.getElementById("modalFrame")).pointerEvents !== "none";
+      }));
+
+    await page.frameLocator("#modalFrame").locator("#ageYes").click();
+    await page.waitForTimeout(1000);
+
+    ok("preview relocks to scroll-only once the gate is answered",
+      await page.$eval("#modalStage", (e) => e.classList.contains("is-static")));
+
+    await page.click(".modal__close");
+    await page.waitForTimeout(200);
+
     // the quote form must not navigate away — it posts over fetch
     ok("quote form intercepts submit",
       await page.evaluate(() => {
