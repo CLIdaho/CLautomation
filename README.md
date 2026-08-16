@@ -26,14 +26,67 @@ from branch → `main` / root)*
 
 | Section | What it does |
 |---|---|
-| **Hero** | A flow field — a few hundred particles following a slowly morphing noise field, each leaving a faint additive stroke that accumulates into drifting ribbons of light. Cyan for the build, amber for the town. Nothing repeats and nothing is drawn on a grid. Headline, two CTAs, and a live "currently booking *[month]*" badge that updates itself. |
-| **Stats strip** | Four animated counters: 3 weeks to launch, $500 starting price, 100% accounts in your name, 24 hr reply time. |
-| **Services** | Five priced cards — Custom Website $500 · Automated Texting $500 · Rewards & POS from $2,000 · Growth Support $200/mo · DIY Training $300 — plus a sixth "not sure which you need?" card that routes to the quote form rather than inventing a service. |
-| **How it works** | Four steps built around the actual differentiator — a free working demo before any money changes hands. |
-| **Work** | Two portfolio cards. No visible link: each card opens a modal with a live preview of the site running in a frame, plus an "Open in a new tab" button. Preview is look-and-scroll only — see below. |
-| **About** | Photo and the personal pitch. Ownership terms called out explicitly. |
+| **Nav** | Transparent at the top, frosted once you scroll. A gradient scroll-progress rail on the very top edge, a link underline that follows whichever section you're reading, and the theme picker. |
+| **Hero** | A flow field — a few hundred particles following a slowly morphing noise field, each leaving a faint additive stroke that accumulates into drifting ribbons of light. Nothing repeats and nothing is drawn on a grid. Headline, two CTAs, and a live "currently booking *[month]*" badge that updates itself. On the way down the copy climbs and dissolves while the field stays put, so the two layers separate. |
+| **Stats strip** | Four animated counters over a slowly drifting telemetry grid, with a light bar sweeping the strip on a long loop. Each stat's accent rule draws itself in when the strip arrives. |
+| **Services** | Five priced cards — Custom Website $500 · Automated Texting $500 · Rewards & POS from $2,000 · Growth Support $200/mo · DIY Training $300 — plus a sixth "not sure which you need?" card that routes to the quote form rather than inventing a service. The cards tilt toward the cursor and carry a spotlight that tracks it; two blurred accent orbs drift against the scroll behind them. |
+| **How it works** | Four steps built around the actual differentiator — a free working demo before any money changes hands. A progress track above the steps fills with scroll position rather than on a timer, lighting each node as you reach it, over a circuit-board backdrop (see below). |
+| **Work** | Two portfolio cards. No visible link: each card opens a modal with a live preview of the site running in a frame, plus an "Open in a new tab" button. Preview is look-and-scroll only — see below. Cards tilt, and the bloom behind each mockup parallaxes. |
+| **About** | Photo and the personal pitch. Ownership terms called out explicitly. The portrait parallaxes against its own glow and takes a scan pass every few seconds. |
 | **Get a quote** | Working email form — see below. |
-| **Mobile** | Sticky bottom action bar, full-screen preview modal, 44px+ tap targets, no horizontal scroll at 375px. |
+| **Everywhere** | Section headings are split into words that climb out of a mask as the block arrives; primary and ghost buttons lean a few pixels toward the cursor. |
+| **Mobile** | Sticky bottom action bar, full-screen preview modal, 44px+ tap targets, no horizontal scroll at 375px. Tilt, spotlight, and the magnetic buttons are all gated on `(pointer: fine)` — a tilt that fires on a tap reads as a glitch, not as depth. |
+
+## The theme picker
+
+Four palettes, in the nav on every width: **Signal** (cyan and amber on navy, the
+default), **Ember** (hi-vis orange and gold), **Aurora** (mint and sky on deep green),
+**Nebula** (magenta and ice). The choice is stored in `localStorage` and restored by a
+tiny inline script in `<head>` — applying it from `main.js` would land after the
+stylesheet had already painted the default, and every reload would flash cyan on the way
+to the colour the visitor picked.
+
+**This is the sales argument, not decoration.** Every colour on the page comes out of one
+token block — including both canvas animations, which read the custom properties back out
+of the stylesheet at runtime and retint their particles mid-flight. When an owner says
+"I don't love the blue," the answer is a toggle instead of a rebuild, and the picker is
+the proof sitting in the nav.
+
+Adding a fifth theme is a new `[data-theme="name"]` block in `css/style.css` overriding
+the fourteen raw tokens, one `<button data-theme-set="name">` in the picker, the name
+added to the regex in the head script, and the same palette mirrored into
+`tools/hero-preview.py`. The smoke test checks the first three agree with each other.
+
+### The token names
+
+The accents are named by **role**, not by hue, because a token called `--cyan` holding
+orange under the Ember theme is a lie the next person has to decode:
+
+| Token | Role | Signal value |
+|---|---|---|
+| `--acc` | the build — primary accent | cyan `#2DD4E8` |
+| `--acc2` | the town — secondary accent | amber `#FFA53A` |
+| `--acc3` | the far end of the gradient | indigo `#5B7CFA` |
+| `--acc-mid` | a step between `--acc` and `--acc3`, for text gradients | `#49A8F5` |
+| `--ink` | type that sits on top of an accent fill | `#04121a` |
+
+Each has an `-rgb` triplet alongside it so a glow can be written `rgba(var(--acc-rgb), .35)`
+without a second variable per opacity. Backgrounds carry `--bg-rgb` for the same reason —
+every scrim on the page is a translucent wash of the base colour, so the scrims re-tint too.
+
+## The lower page's ambient layer
+
+The hero's flow field is liquid and organic. The process section gets a deliberately
+different one: **etched traces** on a grid with the occasional 45° dogleg, junction pads
+where they end, and data pulses running along them. Two ideas, not one idea twice.
+
+The traces never change once generated, so they're rendered once to an offscreen canvas
+and blitted each frame; only the pulses are redrawn. Both canvases are gated on an
+`IntersectionObserver`, so scrolling past the hero stops the flow field before the circuit
+starts — never two animations at once.
+
+Diagonal legs are capped at one grid cell. Letting them run three produced long crossing
+lines and the whole thing read as a star chart rather than as a board.
 
 ## The quote form (this is the part to finish)
 
@@ -108,7 +161,8 @@ reproduces the shape of the trap and the smoke test drives it.
 ```
 index.html                     the whole page
 css/style.css                  design tokens in :root, everything derives from them
-js/main.js                     nav, reveals, counters, modal, form, hero canvas
+js/main.js                     nav, theme picker, reveals, counters, parallax,
+                               tilt, modal, form, and the two canvases
 tools/smoke-test.js            drives the real page in a browser (see Testing)
 tools/fixtures/age-gate.html   stand-in blocking overlay the smoke test clicks through
 tools/hero-preview.py          renders a still of the hero animation (see below)
@@ -132,9 +186,19 @@ node tools/smoke-test.js        # starts its own server if one isn't running
 Drives the page in a real browser at desktop and mobile widths and asserts the things that
 have actually broken here: the preview opens and closes via the X and Escape, the close
 button is on screen and meets 44px, a click at its centre reaches a `[data-close]` element,
-the frame is non-interactive while locked, the form intercepts submit, no horizontal scroll,
+the frame is non-interactive while locked, the form intercepts submit, the theme button is
+on top and meets 44px at both widths, picking a theme retints and survives a reload, section
+headings still read as their own text after being split into words, no horizontal scroll,
 no console errors. Plus static checks — every `getElementById` resolves, CSS braces balance,
-no undefined custom properties, no missing assets.
+no undefined custom properties, no missing assets, **no brand colour written literally past
+the token block**, every theme overrides the full raw token set, and the head script and the
+picker list the same themes.
+
+That literal-colour check is the one that protects the theme picker. The moment a glow or a
+canvas constant is written as a hex somewhere further down the sheet, one theme stops being a
+full retheme and starts being three quarters of one — and it will be a detail nobody catches
+by eye. The clients' own brand colours in the two portfolio mockups are allowlisted in
+`MOCK_COLORS`; that list is the only place a literal belongs.
 
 Needs Chromium and playwright (`npm i -g playwright`); point at a specific binary with
 `CHROMIUM_PATH=`. **Run it before pushing.** Two rounds of fixes shipped on reasoning alone
@@ -171,7 +235,11 @@ pip install numpy pillow
 python3 tools/hero-preview.py                 # composed, as the page shows it
 python3 tools/hero-preview.py --raw           # field only, no vignette or grain
 python3 tools/hero-preview.py --seed 12       # a different roll of the noise field
+python3 tools/hero-preview.py --theme ember   # signal · ember · aurora · nebula
 ```
+
+The script has no stylesheet to read, so the four palettes are mirrored in a `THEMES` dict
+at the top of it. Change a theme in `css/style.css`, change it there too.
 
 Change a constant in the script, look at the output, then mirror it in `js/main.js` —
 the two blocks are labelled to be kept in sync. Remember the output is one frame of
@@ -185,8 +253,15 @@ than any still.
   `cache-control: max-age=600` and no version in the filename, so without the bump a visitor
   who loaded the site in the last ten minutes keeps running the old code — which already cost
   one round of chasing a bug that was fixed and deployed.
-- **Colors** live in `:root` in `css/style.css`. Cyan is the build, amber is the town.
-  Nothing hardcodes a color outside that block, so a retheme is one edit.
+- **Colors** live in `:root` in `css/style.css`, named by role — `--acc` is the build,
+  `--acc2` is the town. Nothing past that block writes a brand colour literally, including
+  the two canvas animations, which read the tokens at runtime. That is what makes the theme
+  picker work, and the smoke test fails if a literal creeps back in.
+- **The transform variables** (`--lift`, `--rx`, `--ry`, `--mgx`, `--mgy`, `--sc`) are the
+  contract between the stylesheet and `main.js`, declared together near the top of `:root`.
+  Several elements compose more than one effect — a hover lift, a pointer tilt, a magnetic
+  pull — and CSS and JS each own some of them. Write to a variable, never to `transform`
+  itself, or the last one to run wipes out the others.
 - **Prices** appear in the service cards in `index.html` and in the stats strip. Change
   both.
 - **Photo:** the original upload has a green `#OPENTOWORK` LinkedIn banner sweeping across
@@ -198,4 +273,7 @@ than any still.
   Note the source has **no headroom above the hat** — the crown sits at y≈20 of 800 — so no
   crop can put space above his head. A photo with room above the subject would frame better;
   drop any replacement at the same path and update the `width`/`height` on the `<img>`.
-- All ambient animation is disabled under `prefers-reduced-motion`.
+- All ambient animation is disabled under `prefers-reduced-motion` — both canvases, the
+  parallax, the tilt, the orbs, the scan passes, the word reveal. The theme picker still
+  works; it's a preference, not motion. The process track renders full rather than sitting
+  half-lit against a rail JS is no longer allowed to fill.

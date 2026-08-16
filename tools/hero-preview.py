@@ -28,7 +28,31 @@ import random
 import numpy as np
 from PIL import Image, ImageFilter
 
-BG = np.array([8, 11, 20], dtype=np.float64)
+# --- must match the theme blocks in css/style.css --------------------------
+# js/main.js reads these out of the stylesheet at runtime; this script has no
+# stylesheet to read, so the four palettes are mirrored here. Change a theme
+# there, change it here.
+THEMES = {
+    "signal": ([8, 11, 20], [
+        [45, 212, 232],   # --acc      the build
+        [45, 212, 232],
+        [73, 168, 245],   # --acc-mid
+        [91, 124, 250],   # --acc3
+        [255, 165, 58],   # --acc2     the town
+    ]),
+    "ember": ([12, 10, 13], [
+        [255, 122, 47], [255, 122, 47], [255, 159, 61], [242, 69, 107], [255, 196, 77],
+    ]),
+    "aurora": ([6, 16, 14], [
+        [47, 230, 168], [47, 230, 168], [53, 210, 200], [69, 169, 255], [255, 209, 102],
+    ]),
+    "nebula": ([10, 8, 18], [
+        [244, 91, 200], [244, 91, 200], [197, 107, 240], [124, 107, 255], [77, 225, 255],
+    ]),
+}
+
+BG = np.array(THEMES["signal"][0], dtype=np.float64)
+PALETTE = np.array(THEMES["signal"][1], dtype=np.float64)
 
 # --- must match js/main.js -------------------------------------------------
 SCALE = 0.0024      # field zoom — governs ribbon size
@@ -40,13 +64,6 @@ SPEED = (0.5, 1.1)
 WIDTH = (0.5, 0.8)
 HALO_BLUR = 3.5     # approximates the wide low-alpha bloom stroke
 HALO_GAIN = 1.7
-PALETTE = np.array([
-    [45, 212, 232],   # cyan — the build
-    [45, 212, 232],
-    [73, 168, 245],
-    [91, 124, 250],   # indigo
-    [255, 165, 58],   # amber — the town
-], dtype=np.float64)
 # ---------------------------------------------------------------------------
 
 
@@ -129,8 +146,14 @@ def main():
     ap.add_argument("--frames", type=int, default=800)
     ap.add_argument("--seed", type=int, default=5)
     ap.add_argument("--raw", action="store_true", help="skip the veil and grain")
+    ap.add_argument("--theme", choices=sorted(THEMES), default="signal",
+                    help="which palette from css/style.css to render")
     ap.add_argument("-o", "--out", default="hero-preview.png")
     args = ap.parse_args()
+
+    global BG, PALETTE
+    BG = np.array(THEMES[args.theme][0], dtype=np.float64)
+    PALETTE = np.array(THEMES[args.theme][1], dtype=np.float64)
 
     out = render(args.width, args.height, args.frames, args.seed)
     if not args.raw:
