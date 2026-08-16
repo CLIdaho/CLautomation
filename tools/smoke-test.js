@@ -73,7 +73,53 @@ function staticChecks() {
 
   // SVG <text> in a favicon renders with whatever font the viewer's OS has
   ok("favicon is drawn paths, not text", !/rel="icon"[^>]*%3Ctext/.test(html));
+
+  /* A theme is a swap of the token block and nothing else. The moment a
+     brand colour is written literally somewhere further down the sheet,
+     one theme stops being a full retheme and starts being three quarters
+     of one — and it will be a glow or a canvas constant that gets missed,
+     which is exactly the kind of thing nobody notices in review. */
+  const tokenBlockEnd = css.indexOf("/* ---------- Reset ---------- */");
+  const past = css.slice(tokenBlockEnd);
+  const literals = [...past.matchAll(/#[0-9a-fA-F]{6}\b|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+/g)]
+    .map((m) => m[0])
+    // greys and pure black/white alphas are fine: they are not brand colour
+    .filter((v) => !/^rgba?\(\s*(255\s*,\s*255\s*,\s*255|0\s*,\s*0\s*,\s*0)/.test(v))
+    // the portfolio mockups reproduce the *clients'* brands on purpose
+    .filter((v) => !MOCK_COLORS.includes(v.toLowerCase()));
+  ok("no brand colours hardcoded past the token block", literals.length === 0,
+    [...new Set(literals)].join(", "));
+
+  // every theme has to define the full raw set, or a token silently falls
+  // through to the default palette and one accent stays cyan
+  const RAW = ["--bg", "--bg-rgb", "--bg-raise", "--bg-card", "--bg-card-2", "--acc",
+    "--acc-rgb", "--acc-mid", "--acc-mid-rgb", "--acc2", "--acc2-rgb", "--acc3",
+    "--acc3-rgb", "--ink"];
+  const incomplete = [];
+  for (const theme of ["ember", "aurora", "nebula"]) {
+    const block = css.match(new RegExp(`\\[data-theme="${theme}"\\]\\s*{([^}]*)}`));
+    if (!block) { incomplete.push(`${theme} (no block)`); continue; }
+    for (const tok of RAW) {
+      if (!new RegExp(`^\\s*${tok}\\s*:`, "m").test(block[1])) incomplete.push(`${theme}${tok}`);
+    }
+  }
+  ok("every theme overrides the whole raw token set", incomplete.length === 0, incomplete.join(", "));
+
+  // the head script and the picker have to agree on the list of themes
+  const headThemes = html.match(/\/\^\(([a-z|]+)\)\$\//);
+  const picked = [...html.matchAll(/data-theme-set="(\w+)"/g)].map((m) => m[1]);
+  ok("head restore script and picker list the same themes",
+    !!headThemes && headThemes[1].split("|").sort().join() === picked.slice().sort().join(),
+    `${headThemes && headThemes[1]} vs ${picked.join("|")}`);
 }
+
+/* The two portfolio thumbnails are CSS art of the clients' own sites, so
+   their colours are theirs and stay literal. */
+const MOCK_COLORS = [
+  "#141a3a", "#07080f", "#17223b", "#0a0e1a",   // thumbnail backdrops
+  "#3aa7ff", "#ff2f92", "#7a5cff",              // cloud hub
+  "#ff6b1a", "#ffb800", "#111726",              // traffic flow
+];
 
 /* Serve the site ourselves unless something is already listening, so this is
    one command rather than two and can't be run against a dead server. */
@@ -218,6 +264,59 @@ async function reachable() {
       const svg = document.querySelector(".brand__mark svg");
       return !!svg && svg.getBoundingClientRect().width > 10;
     }));
+
+    /* Theme picker. The button has to stay reachable at both widths — it
+       sits beside the hamburger, so a mobile regression hides it behind
+       the menu rather than removing it, which is easy to miss by eye. */
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(200);
+    const themeBtn = await page.evaluate(() => {
+      const r = document.getElementById("themeBtn").getBoundingClientRect();
+      const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return {
+        w: Math.round(r.width), h: Math.round(r.height),
+        onTop: top ? !!top.closest("#themeBtn") : false,
+      };
+    });
+    ok("theme button meets the 44px tap target and is on top",
+      themeBtn.w >= 44 && themeBtn.h >= 44 && themeBtn.onTop, JSON.stringify(themeBtn));
+
+    await page.click("#themeBtn");
+    await page.waitForTimeout(300);
+    await page.click('[data-theme-set="ember"]');
+    await page.waitForTimeout(600);
+
+    ok("picking a theme retints the page and is remembered",
+      await page.evaluate(() => document.documentElement.getAttribute("data-theme") === "ember" &&
+        getComputedStyle(document.documentElement).getPropertyValue("--acc").trim().toLowerCase() === "#ff7a2f" &&
+        localStorage.getItem("cla-theme") === "ember"));
+
+    ok("the swap class is taken back off",
+      await page.evaluate(() => !document.documentElement.classList.contains("is-theming")));
+
+    ok("a theme change does not introduce horizontal scroll",
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1));
+
+    // the head script has to restore it before the stylesheet paints
+    await page.reload({ waitUntil: "domcontentloaded" });
+    ok("the saved theme is restored before first paint",
+      await page.evaluate(() => document.documentElement.getAttribute("data-theme") === "ember"));
+    await page.evaluate(() => localStorage.removeItem("cla-theme"));
+    await page.waitForTimeout(400);
+
+    /* splitHeadings() rewrites every section heading's text nodes. If the
+       masks or the rise ever get stuck, the headings go blank while the
+       page around them looks fine — the same failure mode the reveal
+       system has, so it gets the same guard. */
+    await page.evaluate(() => document.getElementById("services").scrollIntoView());
+    await page.waitForTimeout(900);
+    ok("split section headings still read as their own text",
+      await page.evaluate(() => {
+        const h = document.querySelector("#services h2");
+        return h.textContent.replace(/\s+/g, " ").trim() ===
+          "Two things: the site, and everything that runs behind it." &&
+          h.getBoundingClientRect().height > 20;
+      }));
 
     await ctx.close();
   }
