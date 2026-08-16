@@ -425,10 +425,6 @@ p { text-wrap: pretty; }
 .theme__meta { display: grid; gap: 1px; min-width: 0; }
 .theme__name { font-size: .9rem; font-weight: 600; color: var(--text); }
 .theme__desc { font-size: .74rem; color: var(--text-faint); line-height: 1.35; }
-.theme__note {
-  font-size: .72rem; color: var(--text-faint); line-height: 1.5;
-  border-top: 1px solid var(--line-soft); margin-top: 6px; padding: 9px 4px 1px;
-}
 
 /* ---------- Ambient decoration ----------
    Blurred accent orbs that drift against the scroll. Purely decorative,
